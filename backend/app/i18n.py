@@ -51,6 +51,26 @@ MESSAGES: dict[str, str] = {
         "{missing_pct}% of values are missing. The most frequent category is the least surprising "
         "fill-in; use the constant \"Missing\" if missingness itself may carry meaning."
     ),
+    "reason.outliers.signal": (
+        "Among outlier rows the rarest class makes up {outlier_rate}% versus {overall_rate}% overall "
+        "(at least {ratio}x). The outliers carry signal, not noise, so they are kept."
+    ),
+    "reason.outliers.cap": (
+        "{outlier_pct}% of values fall outside the Tukey fences [{lower}, {upper}] (Q1 - 1.5*IQR, "
+        "Q3 + 1.5*IQR), at most {threshold}%. Capping them at the fences limits their pull."
+    ),
+    "reason.outliers.heavy_tail": (
+        "{outlier_pct}% of values fall outside the Tukey fences (above {threshold}%). At that share "
+        "the \"outliers\" are part of the real distribution (heavy tail); robust scaling handles them."
+    ),
+    "reason.skewness.log1p": (
+        "Skewness = {skewness} (|skew| > {threshold}: highly skewed) and min = {min} >= 0, "
+        "so log1p can compress the long tail."
+    ),
+    "reason.skewness.yeo_johnson": (
+        "Skewness = {skewness} (|skew| > {threshold}: highly skewed) but min = {min} < 0; log1p "
+        "only works on non-negative values, so Yeo-Johnson is used."
+    ),
     # --- Trade-offs (one per option) ---
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
@@ -62,9 +82,13 @@ MESSAGES: dict[str, str] = {
     "tradeoff.constant": "Fills gaps with 0; simple, but 0 may be a misleading value.",
     "tradeoff.constant_missing": "Fills gaps with the category \"Missing\", so missingness becomes a signal.",
     "tradeoff.drop_rows": (
-        "Removes rows with a missing value from the train split only; test rows are kept "
-        "(and still imputed) so the evaluation stays honest."
+        "Removes the affected rows (missing value or outlier) from the train split only; test rows are kept "
+        "(and still transformed) so the evaluation stays honest."
     ),
+    "tradeoff.cap": "Clips values to the train fences; keeps every row but flattens the extremes.",
+    "tradeoff.log1p": "Applies log(1 + x); strongly compresses a right tail, needs x >= 0.",
+    "tradeoff.yeo_johnson": "Power transform fitted on train; works with negative values, harder to interpret.",
+    "tradeoff.sqrt": "Applies the square root; a milder compression than log1p, needs x >= 0.",
     # --- Warnings ---
     "warning.stratify_fallback": (
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "
