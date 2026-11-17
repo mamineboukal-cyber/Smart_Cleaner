@@ -101,3 +101,61 @@ def test_index_preserved():
     test = pd.DataFrame({"x": [5.0, np.nan]}, index=["r1", "r2"])
     out = ColumnPipeline("x", "numeric", {"missing": "median"}).fit(TRAIN).transform(test, False)
     assert list(out.index) == ["r1", "r2"]
+
+
+# ---------- steps 6-7: encoding and scaling ----------
+
+def test_onehot_unseen_category_all_zero():
+    p = ColumnPipeline("c", "categorical", {"encoding": "onehot"}).fit(pd.DataFrame({"c": ["a", "b"]}))
+    out = p.transform(pd.DataFrame({"c": ["z", np.nan]}), False)
+    assert (out.to_numpy() == 0).all() and list(out.columns) == ["c_a", "c_b"]
+
+
+def test_onehot_known_category():
+    p = ColumnPipeline("c", "categorical", {"encoding": "onehot"}).fit(pd.DataFrame({"c": ["b", "a"]}))
+    out = p.transform(pd.DataFrame({"c": ["b"]}), False)
+    assert out.iloc[0].tolist() == [0, 1]
+
+
+def test_frequency_and_ordinal_unseen():
+    train = pd.DataFrame({"c": ["a", "a", "a", "b"]})
+    test = pd.DataFrame({"c": ["a", "b", "z", np.nan]})
+    freq = ColumnPipeline("c", "categorical", {"encoding": "frequency"}).fit(train).transform(test, False)
+    assert freq["c"].tolist() == [0.75, 0.25, 0.0, 0.0]
+    ordi = ColumnPipeline("c", "categorical", {"encoding": "ordinal"}).fit(train).transform(test, False)
+    assert ordi["c"].tolist() == [0, 1, -1, -1]
+
+
+def test_missing_then_encoding_uses_imputed_category():
+    train = pd.DataFrame({"c": ["a", None]})
+    p = ColumnPipeline("c", "categorical", {"missing": "constant_missing", "encoding": "onehot"}).fit(train)
+    assert list(p.transform(train, True).columns) == ["c_Missing", "c_a"]
+
+
+def test_standard_scaler_uses_train_mean_std():
+    train = pd.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+    p = ColumnPipeline("x", "numeric", {"scaling": "standard"}).fit(train)
+    v = p.transform(pd.DataFrame({"x": [10.0, np.nan]}), False)["x"]
+    assert np.isclose(v.iloc[0], (10 - 2.5) / train["x"].std(ddof=0)) and np.isnan(v.iloc[1])
+
+
+def test_minmax_and_robust_use_train_values():
+    train = pd.DataFrame({"x": [0.0, 1.0, 2.0, 3.0, 4.0]})
+    mm = ColumnPipeline("x", "numeric", {"scaling": "minmax"}).fit(train).transform(pd.DataFrame({"x": [8.0]}), False)
+    assert mm["x"].iloc[0] == 2.0
+    rb = ColumnPipeline("x", "numeric", {"scaling": "robust"}).fit(train).transform(pd.DataFrame({"x": [4.0]}), False)
+    assert rb["x"].iloc[0] == 1.0   # (4 - median 2) / IQR 2
+
+
+def test_robust_scaler_zero_iqr_safe():
+    train = pd.DataFrame({"x": [5.0] * 10})
+    for opt in ("standard", "minmax", "robust"):
+        out = ColumnPipeline("x", "numeric", {"scaling": opt}).fit(train).transform(pd.DataFrame({"x": [7.0]}), False)
+        assert np.isfinite(out["x"]).all()
+
+
+def test_scaling_fitted_after_imputation():
+    train = pd.DataFrame({"x": [0.0, 10.0, np.nan]})
+    p = ColumnPipeline("x", "numeric", {"missing": "constant", "scaling": "standard"}).fit(train)
+    filled = pd.Series([0.0, 10.0, 0.0])
+    assert np.isclose(p.params["scaling"]["center"], filled.mean())

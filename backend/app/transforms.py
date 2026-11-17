@@ -10,16 +10,21 @@ Each step is fitted on the train values produced by the steps before it.
 """
 
 import warnings
+from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer
 
 from app.findings import (
-    CAP, CONSTANT_FILL, CONSTANT_MISSING, DATETIME, DROP_COLUMN, DROP_ROWS, EXTRACT, KEEP, LOG1P,
+    CAP, CONSTANT_FILL, ENCODING, FREQUENCY, MINMAX, ONEHOT, ORDINAL, ROBUST, SCALING, STANDARD, CONSTANT_MISSING, DATETIME, DROP_COLUMN, DROP_ROWS, EXTRACT, KEEP, LOG1P,
     MEAN, MEDIAN, MISSING, MODE, NONE, OUTLIERS, SKEWNESS, SQRT, YEO_JOHNSON,
 )
-from app.profiling import iqr_fences
+from app.findings import Finding
+from app.profiling import column_stats, iqr_fences
+from app.rules.context import ColumnContext
+from app.rules.encoding import check_scaling
+from app.split import SplitResult
 
 MISSING_LABEL = "Missing"
 # output suffix -> pandas .dt accessor
@@ -107,11 +112,53 @@ class ColumnPipeline:
             rows = rows.union(s.index[~self._outside_fences(s)])
         return rows
 
-    # ---------- hooks for steps 6-7 (encoding, scaling) ----------
+    def pre_scaling(self, df: pd.DataFrame) -> pd.Series | None:
+        """The column after steps 3-5 (what scaling is fitted on), or None if the
+        column is dropped or turned into date parts."""
+        if self.dropped or self.extracts_dates:
+            return None
+        return self._pre(self._coerce(df[self.column]))
+
+    # ---------- steps 6-7: encoding (categorical) and scaling (numeric) ----------
     def _fit_post(self, s: pd.Series) -> None:
-        pass
+        opt = self.choices.get(ENCODING)
+        if not self.numeric and opt in (ONEHOT, ORDINAL, FREQUENCY):
+            non_null = s.dropna()
+            categories = sorted(non_null.unique().tolist(), key=str)
+            if opt == FREQUENCY:
+                freq = non_null.value_counts(normalize=True)
+                self.params[ENCODING] = {"frequencies": {k: float(v) for k, v in freq.items()}}
+            else:
+                self.params[ENCODING] = {"categories": categories}
+            self._applied[ENCODING] = opt
+        opt = self.choices.get(SCALING)
+        values = s.dropna()
+        if self.numeric and opt in (STANDARD, MINMAX, ROBUST) and not values.empty:
+            if opt == STANDARD:
+                center, scale = values.mean(), values.std(ddof=0)
+            elif opt == MINMAX:
+                center, scale = values.min(), values.max() - values.min()
+            else:
+                q1, q3 = values.quantile(0.25), values.quantile(0.75)
+                center, scale = values.median(), q3 - q1
+            if not scale or not np.isfinite(scale):
+                scale = 1.0   # constant train column: avoid dividing by zero
+            self.params[SCALING] = {"center": float(center), "scale": float(scale)}
+            self._applied[SCALING] = opt
 
     def _transform_post(self, s: pd.Series) -> pd.DataFrame:
+        opt = self._applied.get(ENCODING)
+        if opt == ONEHOT:
+            cats = self.params[ENCODING]["categories"]
+            return pd.DataFrame({f"{self.column}_{c}": (s == c).astype("int64") for c in cats}, index=s.index)
+        if opt == ORDINAL:
+            codes = {c: i for i, c in enumerate(self.params[ENCODING]["categories"])}
+            return s.map(codes).fillna(-1).astype("int64").to_frame(self.column)
+        if opt == FREQUENCY:
+            return s.map(self.params[ENCODING]["frequencies"]).fillna(0.0).astype(float).to_frame(self.column)
+        if SCALING in self._applied:
+            p = self.params[SCALING]
+            s = (s - p["center"]) / p["scale"]
         return s.to_frame(self.column)
 
     # ---------- helpers ----------
@@ -215,3 +262,48 @@ class ColumnPipeline:
         if mask.any():
             out[mask] = self._power.transform(s[mask].to_numpy().reshape(-1, 1)).ravel()
         return out
+
+
+@dataclass
+class ApplyResult:
+    train: pd.DataFrame
+    test: pd.DataFrame
+    applied: dict[str, dict[str, str]]           # column -> {rule: option actually applied}
+    scaling_findings: dict[str, Finding] = field(default_factory=dict)
+    rows_dropped_train: int = 0
+
+
+def apply_all(split: SplitResult, types: dict[str, str], choices: dict[str, dict[str, str]],
+              target: str | None) -> ApplyResult:
+    """Fit every column on train, drop the chosen train rows, transform train and test."""
+    columns = [str(c) for c in split.train.columns if c != target]
+    pipelines = {c: ColumnPipeline(c, types[c], choices.get(c, {})).fit(split.train) for c in columns}
+
+    to_drop = pd.Index([])
+    for p in pipelines.values():
+        to_drop = to_drop.union(p.train_rows_to_drop(split.train))
+    train = split.train.drop(index=to_drop)
+
+    def build(df: pd.DataFrame, is_train: bool) -> pd.DataFrame:
+        parts = [p.transform(df, is_train) for p in pipelines.values()]
+        out = pd.concat(parts, axis=1) if parts else pd.DataFrame(index=df.index)
+        if target is not None:
+            out[target] = df[target]
+        return out
+
+    scaling_findings = {}
+    for c, p in pipelines.items():
+        if types[c] != "numeric":
+            continue
+        s = p.pre_scaling(train)
+        if s is not None:
+            ctx = ColumnContext("numeric", column_stats(s, "numeric"), None, split.task)
+            scaling_findings[c] = check_scaling(s, ctx)
+
+    return ApplyResult(
+        train=build(train, True),
+        test=build(split.test, False),
+        applied={c: p.applied() for c, p in pipelines.items()},
+        scaling_findings=scaling_findings,
+        rows_dropped_train=len(to_drop),
+    )
