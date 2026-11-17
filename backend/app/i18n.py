@@ -12,6 +12,9 @@ MESSAGES: dict[str, str] = {
     "ui.tab.eda": "Exploratory analysis",
     "ui.tab.preprocessing": "Preprocessing & cleaning",
     "ui.tab.export": "Execute & export",
+    # --- Errors ---
+    "error.unreadable_file": "The file could not be read. Upload a CSV or Excel (.xlsx) file.",
+    "error.unknown_sheet": "Sheet '{sheet}' does not exist in this workbook.",
 }
 
 
