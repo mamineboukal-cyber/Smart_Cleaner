@@ -71,6 +71,22 @@ MESSAGES: dict[str, str] = {
         "Skewness = {skewness} (|skew| > {threshold}: highly skewed) but min = {min} < 0; log1p "
         "only works on non-negative values, so Yeo-Johnson is used."
     ),
+    "reason.encoding.onehot": (
+        "{n_unique} categories (<= {threshold}): one-hot encoding adds one binary column per "
+        "category without implying an order."
+    ),
+    "reason.encoding.frequency": (
+        "{n_unique} categories (> {threshold}): one-hot would add too many sparse columns, so "
+        "frequency encoding keeps a single column, fitted on train counts."
+    ),
+    "reason.scaling.robust": (
+        "{outlier_pct}% of values are outliers (> {threshold}%). RobustScaler uses the median and "
+        "IQR, which stay stable when that many values are extreme."
+    ),
+    "reason.scaling.standard": (
+        "{outlier_pct}% of values are outliers (<= {threshold}%). Standardising to mean 0, std 1 "
+        "is the default."
+    ),
     # --- Trade-offs (one per option) ---
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
@@ -89,6 +105,12 @@ MESSAGES: dict[str, str] = {
     "tradeoff.log1p": "Applies log(1 + x); strongly compresses a right tail, needs x >= 0.",
     "tradeoff.yeo_johnson": "Power transform fitted on train; works with negative values, harder to interpret.",
     "tradeoff.sqrt": "Applies the square root; a milder compression than log1p, needs x >= 0.",
+    "tradeoff.onehot": "One binary column per category; no false order, but many columns if categories are many.",
+    "tradeoff.ordinal": "One integer per category; compact, but implies an order that may not exist.",
+    "tradeoff.frequency": "Replaces each category by its train frequency; one column, but equal-frequency categories collide.",
+    "tradeoff.standard": "Mean 0, std 1 (train); sensitive to extreme values.",
+    "tradeoff.minmax": "Rescales to [0, 1] (train min/max); one extreme value squashes the rest.",
+    "tradeoff.robust": "Centres on the median and divides by the IQR (train); stable with outliers.",
     # --- Warnings ---
     "warning.stratify_fallback": (
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "

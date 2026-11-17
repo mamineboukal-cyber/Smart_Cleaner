@@ -6,6 +6,7 @@ from app.findings import (
     CAP, DROP_ROWS, LOG1P, NONE, OUTLIERS, SKEWNESS, SQRT, YEO_JOHNSON, Finding, round_stat,
 )
 from app.i18n import t
+from app.profiling import iqr_fences
 from app.rules.context import alternatives
 
 CAP_MAX_PCT = 5          # <= 5% outliers -> cap; above, the tail is real (robust scaling)
@@ -14,10 +15,15 @@ SKEW_THRESHOLD = 1       # |skew| > 1 is "highly skewed"
 
 
 def _outlier_mask(s: pd.Series, ctx) -> pd.Series | None:
-    lo, hi = ctx.stats.get("lower_fence"), ctx.stats.get("upper_fence")
-    if lo is None or hi is None:
-        return None
+    """Rows outside the exact Tukey fences of ``s`` (the train column).
+
+    The fences in ``ctx.stats`` are rounded for display, so they are recomputed
+    here; otherwise a value between the exact and the rounded fence is
+    misclassified."""
     values = pd.to_numeric(s, errors="coerce")
+    if values.dropna().empty:
+        return None
+    _, _, lo, hi = iqr_fences(values.dropna().astype(float))
     return (values < lo) | (values > hi)   # NaN compares False -> not an outlier
 
 

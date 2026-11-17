@@ -75,3 +75,11 @@ def test_negative_values_yeo_johnson():
 def test_symmetric_no_skew_finding():
     s = pd.Series(np.random.default_rng(0).normal(size=1000))
     assert check_skewness(s, ctx_for(s, "numeric")) is None
+
+
+def test_target_rates_use_exact_not_rounded_fences():
+    # values at 16.67 sit above the exact fence 16.6685 but not above the rounded 16.67
+    s = pd.Series(np.concatenate([np.linspace(0, 10, 900), [16.67] * 100]))
+    y = pd.Series([0] * 900 + [1] * 100)
+    rates = outlier_target_rates(s, ctx_for(s, "numeric", target=y, task="classification"))
+    assert rates == (100.0, 10.0)
