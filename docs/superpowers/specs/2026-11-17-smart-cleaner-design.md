@@ -1,6 +1,6 @@
 # Smart Cleaner — Design
 
-Date: 2026-11-17 · Status: draft for approval · Source requirements: [docs/spec.md](../../spec.md)
+Date: 2026-11-17 · Status: approved 2026-11-17 · Source requirements: [docs/spec.md](../../spec.md)
 
 ## 1. Intent
 
@@ -75,7 +75,7 @@ Choices about the train/test split and export:
   - **Text and date columns are flagged, never crashed on.** See rule 13 and the "Never crash" note in §8.
 
   No other hardening is in scope.
-- **Language:** every UI label, reason, trade-off line and report header comes from **one translations file**, so nothing user-facing is hardcoded. The display language is still to be confirmed (French or English).
+- **Language:** every UI label, reason, trade-off line and report header comes from **one translations file**, so nothing user-facing is hardcoded. The display language is **English**.
 
 ## 6. Architecture (my calls, open to correction)
 
