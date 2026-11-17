@@ -33,3 +33,8 @@ def ctx_for(s: pd.Series, col_type: str, target: pd.Series | None = None, task: 
     from app.rules.context import ColumnContext
 
     return ColumnContext(col_type=col_type, stats=column_stats(s, col_type), target=target, task=task)
+
+
+@pytest.fixture
+def mixed_df_csv_bytes(mixed_df) -> bytes:
+    return mixed_df.to_csv(index=False).encode("utf-8")

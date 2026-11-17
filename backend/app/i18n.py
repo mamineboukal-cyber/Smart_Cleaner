@@ -190,6 +190,13 @@ MESSAGES: dict[str, str] = {
     # --- Errors ---
     "error.unreadable_file": "The file could not be read. Upload a CSV or Excel (.xlsx) file.",
     "error.unknown_sheet": "Sheet '{sheet}' does not exist in this workbook.",
+    "error.empty_file": "The file contains no data.",
+    "error.invalid_target": "Supervised learning needs a target column that exists in the file.",
+    "error.invalid_type": "Unknown column type: {type}. Use numeric, categorical or datetime.",
+    "error.unknown_column": "Column '{column}' cannot be previewed.",
+    "error.unknown_session": "This session does not exist (the server may have restarted). Upload the file again.",
+    "error.not_configured": "Configure the learning mode first.",
+    "error.not_applied": "Apply the transformations before exporting.",
 }
 
 
