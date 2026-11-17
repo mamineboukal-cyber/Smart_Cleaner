@@ -7,9 +7,10 @@ import pandas as pd
 
 from app.findings import (
     CONSTANT, DATETIME, DROP_COLUMN, EXTRACT, FREE_TEXT, ID_LIKE, KEEP,
-    Alternative, Finding,
+    Finding,
 )
 from app.i18n import t
+from app.rules.context import alternatives
 from app.types import DATETIME_PARSE_MIN, date_parse_rate
 
 CONSTANT_TOP_PCT = 99          # top value covers >= 99% of rows
@@ -17,10 +18,6 @@ ID_UNIQUE_RATIO = 0.95         # >= 95% of values are distinct
 FREE_TEXT_MIN_UNIQUE = 50      # > 50 distinct values ...
 FREE_TEXT_MIN_LENGTH = 30      # ... and mean length > 30 characters
 DATE_FLAG_MIN = 0.50           # 50% <= parse rate < 90% -> "possible date"
-
-
-def alternatives(*options: str) -> list[Alternative]:
-    return [Alternative(o, t(f"tradeoff.{o}")) for o in options]
 
 
 def check_constant(s: pd.Series, ctx) -> Finding | None:

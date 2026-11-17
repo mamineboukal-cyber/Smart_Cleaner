@@ -35,10 +35,36 @@ MESSAGES: dict[str, str] = {
         "{parse_pct}% of values parse as dates (between {low}% and {high}%): possible date with an "
         "inconsistent format. No extraction is attempted."
     ),
+    "reason.missing.drop_column": (
+        "{missing_pct}% of values are missing (threshold: > {threshold}%). With more than half "
+        "the values missing, any imputed value would be mostly invented."
+    ),
+    "reason.missing.median": (
+        "{missing_pct}% of values are missing and |skewness| = {abs_skew} > {threshold}. The mean "
+        "is pulled by the long tail, so the median is the more typical value."
+    ),
+    "reason.missing.mean": (
+        "{missing_pct}% of values are missing and |skewness| = {abs_skew} <= {threshold}. The "
+        "distribution is roughly symmetric, so the mean is a fair fill-in."
+    ),
+    "reason.missing.mode": (
+        "{missing_pct}% of values are missing. The most frequent category is the least surprising "
+        "fill-in; use the constant \"Missing\" if missingness itself may carry meaning."
+    ),
     # --- Trade-offs (one per option) ---
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
     "tradeoff.extract": "Replaces the date with year, month, day and day-of-week columns.",
+    "tradeoff.none": "Leaves the column untouched by this step.",
+    "tradeoff.mean": "Fills gaps with the train mean; sensitive to long tails and extreme values.",
+    "tradeoff.median": "Fills gaps with the train median; robust to extreme values.",
+    "tradeoff.mode": "Fills gaps with the most frequent train value; can over-represent that value.",
+    "tradeoff.constant": "Fills gaps with 0; simple, but 0 may be a misleading value.",
+    "tradeoff.constant_missing": "Fills gaps with the category \"Missing\", so missingness becomes a signal.",
+    "tradeoff.drop_rows": (
+        "Removes rows with a missing value from the train split only; test rows are kept "
+        "(and still imputed) so the evaluation stays honest."
+    ),
     # --- Warnings ---
     "warning.stratify_fallback": (
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "
