@@ -104,6 +104,10 @@ MESSAGES: dict[str, str] = {
         "Smallest / largest class = {ratio} (>= {threshold}; smallest class: '{smallest}'). "
         "The classes are balanced enough."
     ),
+    "reason.analysis_failed": (
+        "The analysis of this column failed ({error}). No transformation is recommended; the rest "
+        "of the dataset was analysed normally."
+    ),
     # --- Trade-offs (one per option) ---
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
