@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Early stage: there is no application code yet. The source of truth for requirements is [docs/spec.md](docs/spec.md) (in French). Read it before you design or build anything. Once code exists, update this file with real build/lint/test commands. Don't invent them before then.
+The backend (FastAPI) is built; the frontend is not yet. The source of truth for requirements is [docs/spec.md](docs/spec.md) (in French), refined in [docs/superpowers/specs/](docs/superpowers/specs/). Read them before you design or build anything.
+
+## Commands (backend, run from `backend/`)
+
+- Tests: `.venv/Scripts/python -m pytest -q`
+- Dev server: `.venv/Scripts/python -m uvicorn app.main:app --reload` (API docs at http://localhost:8000/docs)
+- Install deps: `.venv/Scripts/python -m pip install -r requirements.txt`
+
+All user-facing text lives in `backend/app/i18n.py`; never hardcode strings elsewhere.
 
 ## What is being built
 
