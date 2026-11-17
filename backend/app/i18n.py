@@ -87,6 +87,23 @@ MESSAGES: dict[str, str] = {
         "{outlier_pct}% of values are outliers (<= {threshold}%). Standardising to mean 0, std 1 "
         "is the default."
     ),
+    "reason.duplicates.remove": (
+        "{n_duplicates} exact duplicate row(s) ({duplicate_pct}% of the file). A duplicated row "
+        "could land in both train and test, which leaks test answers into training."
+    ),
+    "reason.correlation.drop_column": (
+        "'{drop}' and '{keep}' have |Pearson r| = {r} (threshold: > {threshold}). They carry almost "
+        "the same information; '{drop}' is dropped (more missing values, or later column on a tie)."
+    ),
+    "reason.imbalance.class_weight_balanced": (
+        "Smallest / largest class = {ratio} (threshold: < {threshold}; smallest class: '{smallest}'). "
+        "A model could score well by ignoring the rare class; class weights correct this without "
+        "inventing rows. Recorded only: no resampling is done."
+    ),
+    "reason.imbalance.none": (
+        "Smallest / largest class = {ratio} (>= {threshold}; smallest class: '{smallest}'). "
+        "The classes are balanced enough."
+    ),
     # --- Trade-offs (one per option) ---
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
@@ -111,6 +128,13 @@ MESSAGES: dict[str, str] = {
     "tradeoff.standard": "Mean 0, std 1 (train); sensitive to extreme values.",
     "tradeoff.minmax": "Rescales to [0, 1] (train min/max); one extreme value squashes the rest.",
     "tradeoff.robust": "Centres on the median and divides by the IQR (train); stable with outliers.",
+    "tradeoff.remove": (
+        "Duplicates are removed before the train/test split (otherwise one copy could be in each), "
+        "so this step is not optional."
+    ),
+    "tradeoff.class_weight_balanced": (
+        "Recorded for the model: use class_weight=\"balanced\". No rows are added or removed."
+    ),
     # --- Warnings ---
     "warning.stratify_fallback": (
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "
