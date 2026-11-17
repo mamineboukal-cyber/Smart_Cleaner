@@ -25,3 +25,11 @@ def mixed_df() -> pd.DataFrame:
 def numeric_series_with_outliers() -> pd.Series:
     rng = np.random.default_rng(1)
     return pd.Series(np.concatenate([rng.normal(0, 1, 980), [15, 20, -18, 25] * 5]))
+
+
+def ctx_for(s: pd.Series, col_type: str, target: pd.Series | None = None, task: str | None = None):
+    """Build the ColumnContext a rule receives, from column_stats on ``s``."""
+    from app.profiling import column_stats
+    from app.rules.context import ColumnContext
+
+    return ColumnContext(col_type=col_type, stats=column_stats(s, col_type), target=target, task=task)

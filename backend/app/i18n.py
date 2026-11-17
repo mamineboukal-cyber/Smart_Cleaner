@@ -13,6 +13,32 @@ MESSAGES: dict[str, str] = {
     "ui.tab.preprocessing": "Preprocessing & cleaning",
     "ui.tab.export": "Execute & export",
     "ui.other": "Other",
+    # --- Reasons (rule.recommendation) ---
+    "reason.constant.drop_column": (
+        "{n_unique} distinct value(s); the most frequent covers {top_freq_pct}% of rows "
+        "(threshold: {threshold}%). The column carries almost no information."
+    ),
+    "reason.id_like.drop_column": (
+        "{ratio_pct}% of values are unique (threshold: {threshold}%). The column identifies rows "
+        "rather than describing them, so a model would memorise it."
+    ),
+    "reason.free_text.drop_column": (
+        "{n_unique} distinct values (threshold: > {min_unique}) with a mean length of {mean_length} "
+        "characters (threshold: > {min_length}). This looks like free text, which needs NLP rather "
+        "than cleaning; it is not processed."
+    ),
+    "reason.datetime.extract": (
+        "The column holds dates. A raw timestamp is not usable by most models, but its calendar "
+        "parts (year, month, day, day of week) are."
+    ),
+    "reason.datetime.drop_column": (
+        "{parse_pct}% of values parse as dates (between {low}% and {high}%): possible date with an "
+        "inconsistent format. No extraction is attempted."
+    ),
+    # --- Trade-offs (one per option) ---
+    "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
+    "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
+    "tradeoff.extract": "Replaces the date with year, month, day and day-of-week columns.",
     # --- Warnings ---
     "warning.stratify_fallback": (
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "
