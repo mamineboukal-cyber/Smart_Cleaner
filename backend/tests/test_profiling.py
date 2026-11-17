@@ -1,0 +1,65 @@
+import json
+
+import numpy as np
+import pandas as pd
+
+from app.findings import Alternative, Finding, round_stat
+from app.profiling import chart_data, column_stats, correlation_matrix
+
+
+def test_numeric_stats(numeric_series_with_outliers):
+    st = column_stats(numeric_series_with_outliers, "numeric")
+    assert st["missing_pct"] == 0
+    # 20 of 1000 injected far outside the fences, plus ~0.7% natural normal-tail outliers
+    assert 2.0 <= st["outlier_pct"] < 3.5
+    assert st["lower_fence"] < 0 < st["upper_fence"]
+    for key in ("mean", "std", "min", "max", "skewness", "q1", "q3", "n_unique", "unique_ratio", "top_freq_pct"):
+        assert key in st
+
+
+def test_categorical_stats_have_mean_length():
+    st = column_stats(pd.Series(["ab", "abcd", None]), "categorical")
+    assert st["mean_length"] == 3.0
+    assert round(st["missing_pct"], 2) == 33.33
+    assert "skewness" not in st
+
+
+def test_stats_on_all_missing_column_are_json_safe():
+    st = column_stats(pd.Series([np.nan] * 10), "numeric")
+    assert st["missing_pct"] == 100
+    assert st["mean"] is None and st["skewness"] is None
+    json.dumps(st, allow_nan=False)
+
+
+def test_round_stat():
+    assert round_stat(np.nan) is None and round_stat(np.inf) is None
+    assert round_stat(3.14159265) == 3.142
+    assert round_stat(np.int64(7)) == 7
+
+
+def test_histogram_bounded_on_large_column():
+    cd = chart_data(pd.Series(np.random.default_rng(0).normal(size=300_000)), "numeric")
+    assert cd["kind"] == "histogram"
+    assert len(cd["counts"]) <= 30 and len(cd["edges"]) == len(cd["counts"]) + 1
+    assert sum(cd["counts"]) == 300_000
+
+
+def test_bar_chart_bounded():
+    cd = chart_data(pd.Series([f"c{i}" for i in range(500)]), "categorical")
+    assert cd["kind"] == "bar"
+    assert len(cd["labels"]) <= 20 and cd["labels"][-1] == "Other"
+    assert sum(cd["counts"]) == 500
+
+
+def test_correlation_numeric_only(mixed_df):
+    cm = correlation_matrix(mixed_df, ["num", "sym"])
+    assert cm["columns"] == ["num", "sym"]
+    assert cm["matrix"][0][0] == 1.0
+    json.dumps(cm, allow_nan=False)
+
+
+def test_finding_to_dict_roundtrip():
+    f = Finding("a", "skewness", {"skewness": 2.0}, "log1p", "r", [Alternative("log1p", "x")])
+    d = f.to_dict()
+    assert d["alternatives"][0] == {"option": "log1p", "tradeoff": "x"}
+    assert d["severity"] == "info" and d["column"] == "a"
