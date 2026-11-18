@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { preview as previewApi } from "../api.js";
 import { followScaling } from "../choices.js";
-import { fmt } from "../format.js";
+import { fmtStat } from "../format.js";
 import { errorMessage, useLabels } from "../LabelsContext.jsx";
 import Chart from "./Chart.jsx";
 import ErrorAlert from "./ErrorAlert.jsx";
@@ -64,7 +64,7 @@ export default function ColumnCard({ sessionId, column, findings, choices, recom
         {stats.map((k) => (
           <div key={k}>
             <dt>{t(`ui.stat.${k}`)}</dt>
-            <dd className={k === "missing_pct" && column.stats[k] > 0 ? "is-warn" : undefined}>{fmt(column.stats[k], dash)}</dd>
+            <dd className={k === "missing_pct" && column.stats[k] > 0 ? "is-warn" : undefined}>{fmtStat(k, column.stats[k], dash)}</dd>
           </div>
         ))}
       </dl>
@@ -110,7 +110,7 @@ function PreviewResult({ data, column, afterIndex, setAfterIndex, faded }) {
       <div className="preview-pair">
         <figure className="chart-card">
           <figcaption><span className="chart-title">{t("ui.prep.before")}</span></figcaption>
-          <Chart chart={data.before.chart} />
+          <Chart chart={data.before.chart} tone="before" />
         </figure>
         <figure className="chart-card">
           <figcaption>
@@ -122,7 +122,7 @@ function PreviewResult({ data, column, afterIndex, setAfterIndex, faded }) {
               </select>
             )}
           </figcaption>
-          {after ? <Chart chart={after.chart} /> : <p className="chart-empty">{t("ui.prep.dropped")}</p>}
+          {after ? <Chart chart={after.chart} tone="after" /> : <p className="chart-empty">{t("ui.prep.dropped")}</p>}
           {data.after.length > 1 && <p className="help">{t("ui.prep.after_many", { n: data.after.length })}</p>}
         </figure>
       </div>
@@ -140,8 +140,8 @@ function PreviewResult({ data, column, afterIndex, setAfterIndex, faded }) {
               {rows.map((k) => (
                 <tr key={k}>
                   <th scope="row">{t(`ui.stat.${k}`)}</th>
-                  <td className="num">{fmt(data.before.stats[k], dash)}</td>
-                  <td className="num">{fmt(after.stats[k], dash)}</td>
+                  <td className="num">{fmtStat(k, data.before.stats[k], dash)}</td>
+                  <td className="num">{fmtStat(k, after.stats[k], dash)}</td>
                 </tr>
               ))}
             </tbody>
