@@ -3,4 +3,7 @@ __pycache__/
 .venv/
 node_modules/
 .env
+.claude/skills/
+design-system/
 .superpowers/
+skills-lock.json
