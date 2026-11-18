@@ -4,13 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The backend (FastAPI) is built; the frontend is not yet. The source of truth for requirements is [docs/spec.md](docs/spec.md) (in French), refined in [docs/superpowers/specs/](docs/superpowers/specs/). Read them before you design or build anything.
+The backend (FastAPI) and the frontend (React + Vite, in `frontend/`) are built. See [README.md](README.md) for setup and usage. The source of truth for requirements is [docs/spec.md](docs/spec.md) (in French), refined in [docs/superpowers/specs/](docs/superpowers/specs/). Read them before you design or build anything.
 
 ## Commands (backend, run from `backend/`)
 
 - Tests: `.venv/Scripts/python -m pytest -q`
+- One test: `.venv/Scripts/python -m pytest tests/test_rules_missing.py::test_skewed_numeric_gets_median -q`
 - Dev server: `.venv/Scripts/python -m uvicorn app.main:app --reload` (API docs at http://localhost:8000/docs)
 - Install deps: `.venv/Scripts/python -m pip install -r requirements.txt`
+
+## Commands (frontend, run from `frontend/`)
+
+- Dev server: `npm run dev` (http://localhost:5173, expects the backend on port 8000)
+- Tests: `npm test` · Lint: `npm run lint` · Build: `npm run build`
 
 All user-facing text lives in `backend/app/i18n.py`; never hardcode strings elsewhere.
 
