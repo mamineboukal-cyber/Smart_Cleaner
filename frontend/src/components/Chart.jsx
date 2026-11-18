@@ -1,22 +1,19 @@
 // Charts rendered from backend chart data (the backend bins and counts, the
 // browser only draws). One series per chart, so no legend: the card title
 // names it. Recessive axes and hairline grids keep the bars the loudest thing.
+// Colour carries meaning (see theme.js): numeric violet, categorical teal, and in a
+// before/after preview grey vs violet. Counts in hovers go through fmt like everywhere else.
 import Plotly from "plotly.js-dist-min";
 import createPlotlyComponent from "react-plotly.js/factory";
 import { fmt } from "../format.js";
 import { useLabels } from "../LabelsContext.jsx";
+import { CHART, DIVERGING } from "../theme.js";
 
 const createPlot = createPlotlyComponent.default ?? createPlotlyComponent;
 const Plot = createPlot(Plotly);
 
-const INK_2 = "#4e5b67";
-const GRID = "#e6eaee";
-const AXIS = "#c3cbd3";
-const SERIES = "#2a78d6";
-const SURFACE = "#ffffff";
-// Diverging blue <-> red with a neutral grey at r = 0 (equal steps per arm).
-const DIVERGING = [[0, "#104281"], [0.25, "#5598e7"], [0.5, "#f0efec"], [0.75, "#ec8a89"], [1, "#b22d2d"]];
 const MAX_LABEL = 22;
+const TONE = { before: CHART.before, after: CHART.after };
 
 const CONFIG_SMALL = { displaylogo: false, responsive: true, displayModeBar: false };
 const CONFIG_LARGE = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ["select2d", "lasso2d"] };
@@ -28,8 +25,8 @@ function baseLayout(height) {
     margin: { l: 52, r: 12, t: 8, b: 40 },
     paper_bgcolor: "rgba(0,0,0,0)",
     plot_bgcolor: "rgba(0,0,0,0)",
-    font: { family: "Public Sans, system-ui, sans-serif", size: 11, color: INK_2 },
-    hoverlabel: { bgcolor: SURFACE, bordercolor: AXIS, font: { color: "#16222e", size: 12 } },
+    font: { family: CHART.font, size: 11, color: CHART.ink2 },
+    hoverlabel: { bgcolor: CHART.surface, bordercolor: CHART.axis, font: { family: CHART.font, color: CHART.ink, size: 12 } },
     bargap: 0,
     barcornerradius: 3,
     showlegend: false,
@@ -37,8 +34,8 @@ function baseLayout(height) {
 }
 
 const axis = (extra = {}) => ({
-  gridcolor: GRID, linecolor: AXIS, zeroline: false, tickcolor: AXIS, automargin: true,
-  title: { font: { size: 11, color: INK_2 }, standoff: 6, ...extra.title }, ...extra,
+  gridcolor: CHART.grid, linecolor: CHART.axis, zeroline: false, tickcolor: CHART.axis, automargin: true,
+  title: { font: { size: 11, color: CHART.ink2 }, standoff: 6, ...extra.title }, ...extra,
 });
 
 const DAY_MS = 86_400_000;
@@ -53,7 +50,7 @@ const truncate = (s) => (s.length > MAX_LABEL ? `${s.slice(0, MAX_LABEL - 1)}…
 
 /** Histogram (numeric, or rows per hour for times of day), horizontal bar chart
  * (categories) or a note (kind "unique": almost every value distinct), from {kind, ...}. */
-export default function Chart({ chart, height = 220 }) {
+export default function Chart({ chart, height = 220, tone = "default" }) {
   const t = useLabels();
   const rows = t("ui.chart.rows");
 
@@ -75,9 +72,9 @@ export default function Chart({ chart, height = 220 }) {
     const label = isDate ? dateLabel(edges[0], edges[edges.length - 1]) : fmt;
     const ranges = counts.map((_, i) => `[${label(edges[i])}, ${label(edges[i + 1])}${i === counts.length - 1 ? "]" : ")"}`);
     const data = [{
-      type: "bar", x, y: counts, width, customdata: ranges,
-      marker: { color: SERIES, line: { color: SURFACE, width: 1 } }, // 1px surface gap between bins
-      hovertemplate: `%{customdata}<br>${rows}: %{y:,}<extra></extra>`,
+      type: "bar", x, y: counts, width, customdata: ranges.map((r, i) => [r, fmt(counts[i])]),
+      marker: { color: TONE[tone] ?? CHART.numeric, line: { color: CHART.surface, width: 1 } }, // 1px gap between bins
+      hovertemplate: `%{customdata[0]}<br>${rows}: %{customdata[1]}<extra></extra>`,
     }];
     const xaxis = axis({ showgrid: false, ...(isDate && { type: "date" }),
                          ...(chart.x_label && { title: { text: chart.x_label } }) });
@@ -90,13 +87,14 @@ export default function Chart({ chart, height = 220 }) {
   // Height follows the number of bars (~24px each) so 2 categories don't become slabs.
   const h = Math.max(120, 56 + labels.length * 24);
   const data = [{
-    type: "bar", orientation: "h", x: chart.counts, y: labels.map(truncate), customdata: labels,
-    marker: { color: SERIES, line: { color: SURFACE, width: 2 } },
-    hovertemplate: `%{customdata}<br>${rows}: %{x:,}<extra></extra>`,
+    type: "bar", orientation: "h", x: chart.counts, y: labels.map(truncate),
+    customdata: labels.map((l, i) => [l, fmt(chart.counts[i])]),
+    marker: { color: TONE[tone] ?? CHART.categorical, line: { color: CHART.surface, width: 2 } },
+    hovertemplate: `%{customdata[0]}<br>${rows}: %{customdata[1]}<extra></extra>`,
     // Few bars: label each with its count, so a rare class (e.g. 72 frauds) stays readable.
     ...(labels.length <= 8 && {
       text: chart.counts.map((c) => fmt(c)), textposition: "outside", cliponaxis: false,
-      textfont: { size: 11, color: INK_2 },
+      textfont: { size: 11, color: CHART.ink2 },
     }),
   }];
   const layout = {
