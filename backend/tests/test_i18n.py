@@ -16,3 +16,9 @@ def test_missing_key_raises():
 def test_ui_labels_only_ui_keys():
     labels = ui_labels()
     assert labels and all(k.startswith("ui.") for k in labels)
+
+
+def test_singular_forms_have_a_plural_base():
+    singular = [k for k in MESSAGES if k.endswith("_one")]
+    assert "ui.prep.n_findings_one" in singular
+    assert all(k.removesuffix("_one") in MESSAGES for k in singular)

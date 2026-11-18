@@ -7,6 +7,7 @@ through ``GET /labels``.
 """
 
 MESSAGES: dict[str, str] = {
+    # A "<key>_one" entry is the singular form, used by the frontend when n == 1.
     # --- UI: tabs ---
     "ui.tab.import": "Import",
     "ui.tab.eda": "Exploratory analysis",
@@ -22,6 +23,7 @@ MESSAGES: dict[str, str] = {
     "ui.step.rows": "{n} rows",
     "ui.step.split": "{train} train, {test} test",
     "ui.step.findings": "{n} findings",
+    "ui.step.findings_one": "{n} finding",
     "ui.step.applied": "Applied",
     "ui.step.not_applied": "Not applied yet",
     "ui.error.network": "The server could not be reached. Start the backend on port 8000, then try again.",
@@ -156,6 +158,7 @@ MESSAGES: dict[str, str] = {
     "ui.prep.only_warnings": "Only columns with warnings",
     "ui.prep.no_match": "No column has a warning.",
     "ui.prep.n_findings": "{n} findings",
+    "ui.prep.n_findings_one": "{n} finding",
     "ui.prep.no_findings_short": "No findings",
     "ui.prep.changed": "Changed",
     "ui.prep.no_anomaly": "No anomaly detected. This column passes through unchanged.",
@@ -177,6 +180,7 @@ MESSAGES: dict[str, str] = {
     "ui.prep.after_column": "Output column",
     "ui.prep.after_many": "This step outputs {n} columns. Pick one above to inspect it.",
     "ui.prep.dropped": "The column is dropped, so there is nothing to show after.",
+    "ui.prep.rows_dropped_one": "{n} train row is dropped by your choices. Test rows are kept and transformed.",
     "ui.prep.rows_dropped": "{n} train rows are dropped by your choices. Test rows are kept and transformed.",
     "ui.prep.stat": "Statistic",
     # --- UI: Export tab ---
