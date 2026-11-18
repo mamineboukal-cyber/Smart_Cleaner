@@ -44,10 +44,10 @@ export default function ExportTab({ sessionId, findings, choices, applied, onApp
       <div className="panel">
         <h3>{t("ui.export.summary")}</h3>
         <dl className="facts">
-          <div><dt>{t("ui.export.recommended")}</dt><dd>{counts.recommended}</dd></div>
-          <div><dt>{t("ui.export.changed")}</dt><dd>{counts.changed}</dd></div>
-          <div><dt>{t("ui.export.none")}</dt><dd>{counts.none}</dd></div>
-          <div><dt>{t("ui.export.dropped")}</dt><dd>{counts.dropped.length}</dd></div>
+          <div><dt>{t("ui.export.recommended")}</dt><dd className="num-mono">{counts.recommended}</dd></div>
+          <div><dt>{t("ui.export.changed")}</dt><dd className="num-mono">{counts.changed}</dd></div>
+          <div><dt>{t("ui.export.none")}</dt><dd className="num-mono">{counts.none}</dd></div>
+          <div><dt>{t("ui.export.dropped")}</dt><dd className="num-mono">{counts.dropped.length}</dd></div>
         </dl>
         {counts.dropped.length > 0 && (
           <p className="dropped-list">
@@ -56,11 +56,11 @@ export default function ExportTab({ sessionId, findings, choices, applied, onApp
           </p>
         )}
         <div className="actions export-actions">
-          <button type="button" className="btn btn-primary apply-btn" onClick={run} disabled={busy}>
+          <button type="button" className={`btn apply-btn${applied ? "" : " btn-primary"}`} onClick={run} disabled={busy}>
             {busy ? t("ui.export.applying") : t("ui.export.apply")}
           </button>
           {applied
-            ? <a className="btn" href={exportUrl(sessionId)} download>{t("ui.export.download")}</a>
+            ? <a className="btn btn-primary" href={exportUrl(sessionId)} download>{t("ui.export.download")}</a>
             : <button type="button" className="btn" disabled>{t("ui.export.download")}</button>}
           {!applied && <p className="help">{t("ui.export.apply_first")}</p>}
         </div>
@@ -70,10 +70,10 @@ export default function ExportTab({ sessionId, findings, choices, applied, onApp
         <div className="panel apply-result">
           <h3>{t("ui.export.result")}</h3>
           <dl className="facts">
-            <div><dt>{t("ui.export.n_train")}</dt><dd>{fmtInt(applied.n_train)}</dd></div>
-            <div><dt>{t("ui.export.n_test")}</dt><dd>{fmtInt(applied.n_test)}</dd></div>
-            <div><dt>{t("ui.export.n_columns_out")}</dt><dd>{fmtInt(applied.n_columns_out)}</dd></div>
-            <div><dt>{t("ui.export.rows_dropped")}</dt><dd>{fmtInt(applied.rows_dropped_train)}</dd></div>
+            <div><dt>{t("ui.export.n_train")}</dt><dd className="num-mono">{fmtInt(applied.n_train)}</dd></div>
+            <div><dt>{t("ui.export.n_test")}</dt><dd className="num-mono">{fmtInt(applied.n_test)}</dd></div>
+            <div><dt>{t("ui.export.n_columns_out")}</dt><dd className="num-mono">{fmtInt(applied.n_columns_out)}</dd></div>
+            <div><dt>{t("ui.export.rows_dropped")}</dt><dd className="num-mono">{fmtInt(applied.rows_dropped_train)}</dd></div>
           </dl>
           <p className="help export-contents">{t("ui.export.contents")}</p>
           {appliedRows.length > 0 && (

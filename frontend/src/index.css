@@ -407,12 +407,14 @@ th[aria-sort="ascending"] .sort-btn, th[aria-sort="descending"] .sort-btn { colo
 }
 
 /* ---------- export ---------- */
-.export-actions { margin-top: 20px; }
-.dropped-list { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.export-actions { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--rule); }
+.dropped-list { margin-top: var(--space-3); display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
 .dropped-list code, .step-chip {
-  font-family: inherit; font-size: 0.82rem; background: var(--surface-sunk);
-  border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 1px 7px;
+  font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface-sunk); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 2px 8px;
 }
-.export-contents { margin-top: 14px; max-width: 80ch; }
-.steps-cell { display: flex; flex-wrap: wrap; gap: 6px; white-space: normal !important; }
-.step-chip strong { font-weight: 650; }
+.step-chip { font-family: var(--font-body); }
+.export-contents { margin-top: var(--space-4); max-width: 80ch; }
+.steps-cell { display: flex; flex-wrap: wrap; gap: var(--space-2); white-space: normal !important; }
+.step-chip strong { font-weight: 600; color: var(--accent-hover); }
+.apply-result { border-color: #dcd5fd; }
