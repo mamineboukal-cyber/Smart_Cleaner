@@ -43,11 +43,16 @@ const axis = (extra = {}) => ({
 
 const truncate = (s) => (s.length > MAX_LABEL ? `${s.slice(0, MAX_LABEL - 1)}…` : s);
 
-/** Histogram (numeric) or horizontal bar chart (categories) from {kind, ...}. */
+/** Histogram (numeric, or rows per hour for times of day), horizontal bar chart
+ * (categories) or a note (kind "unique": almost every value distinct), from {kind, ...}. */
 export default function Chart({ chart, height = 220 }) {
   const t = useLabels();
   const rows = t("ui.chart.rows");
 
+  // Almost every value is unique: a top-values chart would be a row of invisible bars.
+  if (chart?.kind === "unique") {
+    return <p className="chart-empty">{t("ui.chart.near_unique", { n_unique: fmt(chart.n_unique), unique_pct: fmt(chart.unique_pct) })}</p>;
+  }
   if (!chart || !chart.counts?.length) return <p className="chart-empty">{t("ui.chart.empty")}</p>;
 
   if (chart.kind === "histogram") {
@@ -60,7 +65,8 @@ export default function Chart({ chart, height = 220 }) {
       marker: { color: SERIES, line: { color: SURFACE, width: 1 } }, // 1px surface gap between bins
       hovertemplate: `%{customdata}<br>${rows}: %{y:,}<extra></extra>`,
     }];
-    const layout = { ...baseLayout(height), xaxis: axis({ showgrid: false }), yaxis: axis({ title: { text: rows } }) };
+    const xaxis = axis({ showgrid: false, ...(chart.x_label && { title: { text: chart.x_label } }) });
+    const layout = { ...baseLayout(height), xaxis, yaxis: axis({ title: { text: rows } }) };
     return <Plot data={data} layout={layout} config={CONFIG_SMALL} useResizeHandler className="plot" />;
   }
 

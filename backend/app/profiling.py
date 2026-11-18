@@ -2,6 +2,11 @@
 
 Chart payloads are bounded (<= 30 histogram bins, <= 20 bars) so the response
 size does not grow with the number of rows (285k for the fraud dataset).
+
+Two cases get no top-values bar chart, because it would be empty to the eye
+(each top value covers a handful of rows next to a huge "Other" bar):
+time-of-day columns are charted as rows per hour instead, and other columns
+where almost every value is unique get a short note ("kind": "unique").
 """
 
 import numpy as np
@@ -10,6 +15,8 @@ from scipy.stats import skew
 
 from app.findings import round_stat
 from app.i18n import t
+from app.rules.structural import ID_UNIQUE_RATIO
+from app.types import is_time_only, to_datetime
 
 IQR_FACTOR = 1.5   # Tukey fences
 MAX_BINS = 30
@@ -72,7 +79,15 @@ def chart_data(s: pd.Series, col_type: str) -> dict:
         bins = min(MAX_BINS, max(1, int(np.unique(values).size)))
         counts, edges = np.histogram(values, bins=bins)
         return {"kind": "histogram", "edges": [round_stat(e) for e in edges], "counts": counts.tolist()}
+    if col_type == "datetime" and is_time_only(s):
+        hours = to_datetime(s).dt.hour.dropna().to_numpy()
+        counts, _ = np.histogram(hours, bins=24, range=(0, 24))
+        return {"kind": "histogram", "edges": list(range(25)), "counts": counts.tolist(),
+                "x_label": t("ui.chart.hour_of_day")}
     vc = s.dropna().astype(str).value_counts()
+    n_non_null = int(vc.sum())
+    if len(vc) > MAX_BARS and len(vc) / n_non_null >= ID_UNIQUE_RATIO:
+        return {"kind": "unique", "n_unique": len(vc), "unique_pct": round_stat(len(vc) / n_non_null * 100)}
     if len(vc) > MAX_BARS:
         top = vc.iloc[: MAX_BARS - 1]
         labels = top.index.tolist() + [t("ui.other")]

@@ -45,10 +45,27 @@ def test_histogram_bounded_on_large_column():
 
 
 def test_bar_chart_bounded():
-    cd = chart_data(pd.Series([f"c{i}" for i in range(500)]), "categorical")
+    cd = chart_data(pd.Series([f"c{i}" for i in range(500)] * 2), "categorical")
     assert cd["kind"] == "bar"
     assert len(cd["labels"]) <= 20 and cd["labels"][-1] == "Other"
-    assert sum(cd["counts"]) == 500
+    assert sum(cd["counts"]) == 1000
+
+
+def test_near_unique_column_gets_a_note_not_bars():
+    cd = chart_data(pd.Series([f"tx{i}" for i in range(500)] + [None]), "categorical")
+    assert cd == {"kind": "unique", "n_unique": 500, "unique_pct": 100.0}
+    few = chart_data(pd.Series(["a", "b", "c"]), "categorical")   # all bars fit: still a chart
+    assert few["kind"] == "bar"
+
+
+def test_time_only_column_charts_rows_per_hour():
+    rng = np.random.default_rng(0)
+    secs = rng.integers(0, 86400, 3000)
+    s = pd.Series([f"{x // 3600:02d}:{x % 3600 // 60:02d}:{x % 60:02d}" for x in secs])   # near-unique
+    cd = chart_data(s, "datetime")
+    assert cd["kind"] == "histogram" and cd["edges"] == list(range(25))
+    assert sum(cd["counts"]) == 3000 and cd["counts"][14] == int(((secs // 3600) == 14).sum())
+    assert cd["x_label"] == "Hour of day"
 
 
 def test_correlation_numeric_only(mixed_df):

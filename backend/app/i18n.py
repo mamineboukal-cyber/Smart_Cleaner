@@ -115,6 +115,11 @@ MESSAGES: dict[str, str] = {
     "ui.chart.rows": "Rows",
     "ui.chart.r": "Pearson r",
     "ui.chart.empty": "No values to plot.",
+    "ui.chart.hour_of_day": "Hour of day",
+    "ui.chart.near_unique": (
+        "{n_unique} distinct values ({unique_pct}% of non-empty rows): almost every value is different, "
+        "so a chart of the most frequent values would show nothing useful."
+    ),
     # --- UI: EDA tab ---
     "ui.eda.heading": "Exploratory analysis",
     "ui.eda.intro": (
@@ -137,8 +142,9 @@ MESSAGES: dict[str, str] = {
     "ui.eda.type": "Type",
     "ui.eda.distributions": "Distributions",
     "ui.eda.distributions_help": (
-        "Numeric columns: histogram with up to 30 bins. Other columns: the most frequent values, "
-        "with the rest grouped as Other."
+        "Numeric columns: histogram with up to 30 bins. Times of day: rows per hour. Other columns: "
+        "the most frequent values, with the rest grouped as Other, or a note when almost every value "
+        "is unique."
     ),
     "ui.eda.correlation": "Correlation between numeric columns",
     "ui.eda.correlation_help": (
