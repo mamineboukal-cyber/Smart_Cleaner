@@ -119,3 +119,25 @@ def test_unreadable_upload_400(c):
 def test_cors_allows_vite(c):
     r = c.options("/labels", headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "GET"})
     assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_same_file_and_settings_give_identical_results(c, mixed_df_csv_bytes):
+    """Two uploads of the same bytes with the same settings: same split, same EDA numbers,
+    same findings and byte-identical exported train/test files."""
+    def run():
+        sid = _upload(c, mixed_df_csv_bytes)
+        c.post("/configure", json={"session_id": sid, "mode": "supervised", "target": "target"})
+        eda = c.get("/eda", params={"session_id": sid}).json()
+        fs = c.get("/findings", params={"session_id": sid}).json()["findings"]
+        choices = {}
+        for f in fs:
+            if f["column"] and f["column"] != "target":
+                choices.setdefault(f["column"], {})[f["rule"]] = f["recommendation"]
+        c.post("/apply", json={"session_id": sid, "choices": choices})
+        z = zipfile.ZipFile(io.BytesIO(c.get("/export", params={"session_id": sid}).content))
+        return eda, fs, z.read("train.csv"), z.read("test.csv")
+
+    first, second = run(), run()
+    assert first[0] == second[0]          # EDA stats, charts, correlation, split summary
+    assert first[1] == second[1]          # findings
+    assert first[2] == second[2] and first[3] == second[3]

@@ -54,3 +54,50 @@ def test_split_is_reproducible():
     a = prepare_and_split(df, "unsupervised", None)
     b = prepare_and_split(df, "unsupervised", None)
     assert a.test.index.tolist() == b.test.index.tolist()
+
+
+def _split_fingerprint_in_new_process(hash_seed: str) -> str:
+    """Run the split in a fresh interpreter (like a server restart) and return the train/test row order."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    code = (
+        "import numpy as np, pandas as pd\n"
+        "from app.split import prepare_and_split\n"
+        "rng = np.random.default_rng(3)\n"
+        "df = pd.DataFrame({'amount': rng.exponential(100, 500), 'cat': rng.choice(list('abc'), 500),"
+        " 'y': rng.choice(['no', 'yes'], 500, p=[0.9, 0.1])})\n"
+        "r = prepare_and_split(df, 'supervised', 'y')\n"
+        "print(list(r.train.index), list(r.test.index))\n"
+    )
+    env = {**os.environ, "PYTHONHASHSEED": hash_seed}
+    backend = Path(__file__).resolve().parents[1]
+    out = subprocess.run([sys.executable, "-c", code], cwd=backend, env=env,
+                         capture_output=True, text=True, check=True)
+    return out.stdout
+
+
+def test_split_is_identical_across_runs_and_restarts():
+    """The same data and settings always give the same train/test rows: the split is seeded
+    (random_state=42) and nothing before it depends on hashing or wall-clock time."""
+    rng = np.random.default_rng(3)
+    df = pd.DataFrame({"amount": rng.exponential(100, 500), "cat": rng.choice(list("abc"), 500),
+                       "y": rng.choice(["no", "yes"], 500, p=[0.9, 0.1])})
+    for mode, target in (("supervised", "y"), ("unsupervised", None)):
+        a, b = prepare_and_split(df, mode, target), prepare_and_split(df.copy(), mode, target)
+        pd.testing.assert_frame_equal(a.train, b.train)
+        pd.testing.assert_frame_equal(a.test, b.test)
+    assert _split_fingerprint_in_new_process("0") == _split_fingerprint_in_new_process("12345")
+
+
+def test_split_depends_on_row_order_and_settings():
+    """Documents what *does* change the split, so a different number is explainable:
+    the mode/target (stratified vs random) and the order of the rows in the file."""
+    rng = np.random.default_rng(3)
+    df = pd.DataFrame({"amount": rng.exponential(100, 500), "y": rng.choice([0, 1], 500, p=[0.9, 0.1])})
+    base = set(prepare_and_split(df, "supervised", "y").train["amount"])
+    assert set(prepare_and_split(df, "unsupervised", None).train["amount"]) != base
+    shuffled = df.sample(frac=1, random_state=0).reset_index(drop=True)
+    assert set(prepare_and_split(shuffled, "supervised", "y").train["amount"]) != base
