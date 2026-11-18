@@ -31,3 +31,22 @@ export function countChoices(findings, choices) {
   }
   return out;
 }
+
+/** Scaling runs last, so the backend recomputes its recommendation after each
+ * column's earlier steps. Where the user had kept the previous recommendation,
+ * follow the new one; an explicit different choice is left alone.
+ * `findings` must already include any earlier recomputed scaling findings. */
+export function followScaling(findings, choices, recomputed) {
+  let next = choices;
+  let changed = false;
+  for (const [column, f] of Object.entries(recomputed)) {
+    const previous = findings.find((g) => g.rule === "scaling" && g.column === column)?.recommendation;
+    const chosen = choices[column]?.scaling;
+    const follows = chosen == null || chosen === previous;
+    if (follows && chosen !== f.recommendation) {
+      next = setChoice(next, column, "scaling", f.recommendation);
+      changed = true;
+    }
+  }
+  return { choices: next, changed };
+}

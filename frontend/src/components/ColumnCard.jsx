@@ -2,6 +2,7 @@
 // that runs this column's chosen steps (in pipeline order) on the train split.
 import { useState } from "react";
 import { preview as previewApi } from "../api.js";
+import { followScaling } from "../choices.js";
 import { fmt } from "../format.js";
 import { errorMessage, useLabels } from "../LabelsContext.jsx";
 import Chart from "./Chart.jsx";
@@ -35,14 +36,12 @@ export default function ColumnCard({ sessionId, column, findings, choices, recom
       let used = columnChoices;
       let data = await ask(used);
       if (data.scaling) {
-        // Scaling runs last, so its recommendation is recomputed on the column after the
-        // earlier steps. If the user kept the old recommendation, App switches the choice
-        // to the new one; preview once more so the "after" really uses that scaler.
-        const oldRec = findings.find((f) => f.rule === "scaling")?.recommendation;
-        const follows = used.scaling == null || used.scaling === oldRec;
+        // App switches the scaling choice to the recomputed recommendation if the user
+        // had kept the old one; preview once more so "after" really uses that scaler.
         onScaling(column.name, data.scaling);
-        if (follows && used.scaling !== data.scaling.recommendation) {
-          used = { ...used, scaling: data.scaling.recommendation };
+        const followed = followScaling(findings, { [column.name]: used }, { [column.name]: data.scaling });
+        if (followed.changed) {
+          used = followed.choices[column.name];
           data = await ask(used);
         }
       }

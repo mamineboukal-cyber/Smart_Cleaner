@@ -179,6 +179,34 @@ MESSAGES: dict[str, str] = {
     "ui.prep.dropped": "The column is dropped, so there is nothing to show after.",
     "ui.prep.rows_dropped": "{n} train rows are dropped by your choices. Test rows are kept and transformed.",
     "ui.prep.stat": "Statistic",
+    # --- UI: Export tab ---
+    "ui.export.heading": "Execute & export",
+    "ui.export.leakage_note": (
+        "Every transformer (imputer, outlier fences, power transform, encoder, scaler) is fitted on the "
+        "train split only, then applied to train and test. Row drops affect train only, so the test "
+        "set still reflects real data."
+    ),
+    "ui.export.summary": "Your choices",
+    "ui.export.recommended": "Following the recommendation",
+    "ui.export.changed": "Changed to another option",
+    "ui.export.none": "Set to none",
+    "ui.export.dropped": "Columns to drop",
+    "ui.export.dropped_list": "Dropped:",
+    "ui.export.apply": "Apply transformations",
+    "ui.export.applying": "Applying…",
+    "ui.export.download": "Download zip",
+    "ui.export.apply_first": "Apply the transformations to enable the download.",
+    "ui.export.result": "Result",
+    "ui.export.n_train": "Train rows",
+    "ui.export.n_test": "Test rows",
+    "ui.export.n_columns_out": "Feature columns out",
+    "ui.export.rows_dropped": "Train rows dropped",
+    "ui.export.contents": (
+        "The zip holds train.csv, test.csv and report.xlsx (dataset summary, one row per feature with "
+        "its statistics, recommendation and applied option, and the correlated pairs)."
+    ),
+    "ui.export.column": "Column",
+    "ui.export.steps": "Applied steps",
     "ui.eda.no_correlation": "There are fewer than two numeric columns, so there is no correlation matrix.",
     # --- Reasons (rule.recommendation) ---
     "reason.constant.drop_column": (

@@ -2,10 +2,11 @@
 // Steps after Import stay locked until /configure succeeds.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NetworkError, getLabels } from "./api.js";
-import { defaultChoices, setChoice } from "./choices.js";
+import { defaultChoices, followScaling, setChoice } from "./choices.js";
 import { fmtInt } from "./format.js";
 import { LabelsContext, useLabels } from "./LabelsContext.jsx";
 import EdaTab from "./tabs/EdaTab.jsx";
+import ExportTab from "./tabs/ExportTab.jsx";
 import ImportTab from "./tabs/ImportTab.jsx";
 import PreprocessingTab from "./tabs/PreprocessingTab.jsx";
 
@@ -87,21 +88,18 @@ function Workspace() {
     setState((s) => ({ ...s, choices: defaultChoices(s.findings), scaling: {}, applied: null }));
   }, []);
 
-  // Scaling runs last, so /preview recomputes its recommendation on the column
-  // after the earlier chosen steps. If the user had kept the old recommendation,
-  // follow the new one; an explicit different choice is left alone.
+  // Scaling runs last, so /preview and /apply recompute its recommendation on each
+  // column after the earlier chosen steps (see followScaling).
   const onScaling = useCallback((column, finding) => {
     setState((s) => {
-      const previous = effectiveScaling(s.findings, s.scaling, column);
-      const chosen = s.choices[column]?.scaling;
-      const follow = chosen == null || chosen === previous?.recommendation;
-      return {
-        ...s,
-        scaling: { ...s.scaling, [column]: finding },
-        choices: follow ? setChoice(s.choices, column, "scaling", finding.recommendation) : s.choices,
-        applied: follow && chosen !== finding.recommendation ? null : s.applied,
-      };
+      const { choices, changed } = followScaling(withScaling(s.findings, s.scaling), s.choices, { [column]: finding });
+      return { ...s, scaling: { ...s.scaling, [column]: finding }, choices, applied: changed ? null : s.applied };
     });
+  }, []);
+
+  // /apply result, plus the choices it was run with (they may follow recomputed scaling).
+  const onApplied = useCallback((applied, choices) => {
+    setState((s) => ({ ...s, applied, choices, scaling: { ...s.scaling, ...applied.scaling } }));
   }, []);
 
   const findings = useMemo(() => withScaling(state.findings, state.scaling), [state.findings, state.scaling]);
@@ -144,6 +142,12 @@ function Workspace() {
                               onReset={onReset} onScaling={onScaling} />
           </TabPanel>
         )}
+        {configured && (
+          <TabPanel id="export" active={tab} visited={visited}>
+            <ExportTab sessionId={state.sessionId} findings={findings} choices={state.choices}
+                       applied={state.applied} onApplied={onApplied} />
+          </TabPanel>
+        )}
       </main>
     </div>
   );
@@ -159,9 +163,6 @@ function withScaling(findings, scaling) {
   return out;
 }
 
-function effectiveScaling(findings, scaling, column) {
-  return scaling[column] ?? findings.find((f) => f.rule === "scaling" && f.column === column);
-}
 
 function TabPanel({ id, active, visited, children }) {
   if (!visited.has(id)) return null;

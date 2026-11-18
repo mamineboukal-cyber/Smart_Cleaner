@@ -152,7 +152,9 @@ def apply(req: ApplyRequest) -> dict:
     r = s.result
     n_out = r.train.shape[1] - (1 if s.target is not None else 0)
     return {"n_train": len(r.train), "n_test": len(r.test), "n_columns_out": n_out,
-            "rows_dropped_train": r.rows_dropped_train, "applied": r.applied}
+            "rows_dropped_train": r.rows_dropped_train, "applied": r.applied,
+            # Scaling recommendation recomputed after each column's earlier steps (as in the report).
+            "scaling": {c: f.to_dict() for c, f in r.scaling_findings.items()}}
 
 
 @app.get("/export")

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { countChoices, defaultChoices, setChoice } from "./choices.js";
+import { countChoices, defaultChoices, followScaling, setChoice } from "./choices.js";
 
 test("defaultChoices uses recommendations and skips dataset findings", () => {
   const f = [{ column: "a", rule: "missing", recommendation: "median" },
@@ -20,4 +20,15 @@ test("countChoices separates recommended, changed and none, and lists dropped co
              { column: "c", rule: "skewness", recommendation: "log1p" }];
   const c = { a: { missing: "mean" }, b: { constant: "drop_column" }, c: { skewness: "none" } };
   expect(countChoices(f, c)).toEqual({ recommended: 1, changed: 1, none: 1, dropped: ["b"] });
+});
+
+test("followScaling follows a recomputed recommendation only where the user kept the old one", () => {
+  const f = [{ column: "a", rule: "scaling", recommendation: "robust" },
+             { column: "b", rule: "scaling", recommendation: "robust" }];
+  const c = { a: { scaling: "robust" }, b: { scaling: "minmax" } };   // b was overridden by the user
+  const recomputed = { a: { recommendation: "standard" }, b: { recommendation: "standard" } };
+  const { choices, changed } = followScaling(f, c, recomputed);
+  expect(changed).toBe(true);
+  expect(choices).toEqual({ a: { scaling: "standard" }, b: { scaling: "minmax" } });
+  expect(followScaling(f, choices, { a: { recommendation: "standard" } }).changed).toBe(false);
 });

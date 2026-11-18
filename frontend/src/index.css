@@ -301,3 +301,14 @@ th.num .sort-btn { flex-direction: row-reverse; }
   .preview-pair { grid-template-columns: 1fr; }
   .column-card > * { padding-left: 16px; padding-right: 16px; }
 }
+
+/* ---------- export ---------- */
+.export-actions { margin-top: 20px; }
+.dropped-list { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.dropped-list code, .step-chip {
+  font-family: inherit; font-size: 0.82rem; background: var(--surface-sunk);
+  border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 1px 7px;
+}
+.export-contents { margin-top: 14px; max-width: 80ch; }
+.steps-cell { display: flex; flex-wrap: wrap; gap: 6px; white-space: normal !important; }
+.step-chip strong { font-weight: 650; }

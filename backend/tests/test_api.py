@@ -54,6 +54,8 @@ def test_full_flow(c, mixed_df_csv_bytes):
     assert ap.status_code == 200
     ap = ap.json()
     assert ap["n_test"] == conf["n_test"] and ap["applied"]["num"]["missing"] == "median"
+    # the scaling recommendation recomputed after the earlier steps, so the UI can match the report
+    assert ap["scaling"]["num"]["rule"] == "scaling"
 
     z = c.get("/export", params={"session_id": sid})
     assert z.headers["content-type"] == "application/zip"
