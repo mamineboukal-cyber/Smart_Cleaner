@@ -2,8 +2,8 @@
 // so click, Enter and Space still open the native picker and screen readers still
 // announce a file input. Once a file is loaded it shrinks to a file row that still
 // accepts a drop. The backend validates the file type, as it does for the picker.
-import { useState } from "react";
-import { pickDroppedFile } from "../dropzone.js";
+import { useEffect, useState } from "react";
+import { guardWindowDrop, pickDroppedFile } from "../dropzone.js";
 import { useLabels } from "../LabelsContext.jsx";
 
 const ACCEPT = ".csv,.txt,.xlsx,.xls";
@@ -11,6 +11,8 @@ const ACCEPT = ".csv,.txt,.xlsx,.xls";
 export default function DropZone({ onFile, disabled, file }) {
   const t = useLabels();
   const [dragging, setDragging] = useState(false);
+  // The Import tab stays mounted, so this guards every tab for the whole session.
+  useEffect(() => guardWindowDrop(window), []);
 
   const over = (e) => {
     e.preventDefault(); // allows the drop
