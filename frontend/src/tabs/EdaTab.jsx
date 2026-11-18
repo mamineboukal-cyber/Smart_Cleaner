@@ -2,7 +2,7 @@
 // statistics table, one chart per column and the correlation heatmap.
 import { Fragment, useMemo, useState } from "react";
 import Chart, { Heatmap } from "../components/Chart.jsx";
-import { fmt, fmtInt } from "../format.js";
+import { fmt, fmtInt, fmtStat } from "../format.js";
 import { useLabels } from "../LabelsContext.jsx";
 
 const STAT_COLUMNS = ["missing_pct", "n_unique", "mean", "std", "min", "max", "skewness", "outlier_pct"];
@@ -28,21 +28,21 @@ export function DatasetSummary({ dataset, findings, upload }) {
     [t("ui.eda.file"), upload.filename],
     [t("ui.eda.task"), t(`ui.task.${dataset.task ?? "none"}`)],
     [t("ui.eda.split"), t(dataset.stratified ? "ui.split.stratified" : "ui.split.random")],
-    [t("ui.eda.train"), fmtInt(dataset.n_train)],
-    [t("ui.eda.test"), fmtInt(dataset.n_test)],
-    [t("ui.eda.duplicates"), fmtInt(dataset.n_duplicates)],
+    [t("ui.eda.train"), fmtInt(dataset.n_train), true],
+    [t("ui.eda.test"), fmtInt(dataset.n_test), true],
+    [t("ui.eda.duplicates"), fmtInt(dataset.n_duplicates), true],
   ];
-  if (dataset.n_target_missing) facts.push([t("ui.eda.target_missing"), fmtInt(dataset.n_target_missing)]);
+  if (dataset.n_target_missing) facts.push([t("ui.eda.target_missing"), fmtInt(dataset.n_target_missing), true]);
   if (imbalance) {
-    facts.push([t("ui.eda.class_ratio"), fmt(imbalance.stats.ratio)]);
+    facts.push([t("ui.eda.class_ratio"), fmt(imbalance.stats.ratio), true]);
     facts.push([t("ui.eda.class_counts"), imbalance.stats.class_counts]);
   }
   return (
     <div className="panel">
       <h3>{t("ui.eda.dataset")}</h3>
       <dl className="facts">
-        {facts.map(([k, v]) => (
-          <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+        {facts.map(([k, v, isNum]) => (
+          <div key={k}><dt>{k}</dt><dd className={isNum ? "num-mono" : undefined}>{v}</dd></div>
         ))}
       </dl>
       {dataset.warnings.map((w) => <div key={w} className="alert alert-warn facts-warning" role="status">{w}</div>)}
@@ -102,7 +102,7 @@ function StatsTable({ columns }) {
                 {STAT_COLUMNS.map((k) => {
                   const v = c.stats[k];
                   const warn = k === "missing_pct" && v > 0;
-                  return <td key={k} className={warn ? "num cell-warn" : "num"}>{fmt(v, dash)}</td>;
+                  return <td key={k} className={warn ? "num cell-warn" : "num"}>{fmtStat(k, v, dash)}</td>;
                 })}
               </tr>
             ))}

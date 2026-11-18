@@ -271,34 +271,42 @@ select.changed { border-color: var(--accent); background: var(--accent-soft); }
 }
 
 /* ---------- EDA ---------- */
-.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px 24px; margin: 14px 0 0; }
-.facts div { min-width: 0; }
-.facts dt { font-size: 0.8rem; color: var(--muted); }
-.facts dd { margin: 2px 0 0; font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; }
-.facts-warning { margin-top: 14px; }
+/* Stat tiles: shared by the EDA summary and the Export tab. */
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3); margin: var(--space-4) 0 0; }
+.facts div { min-width: 0; background: var(--surface-sunk); border-radius: var(--radius-m); padding: var(--space-3) var(--space-4); }
+.facts dt { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.facts dd { margin: var(--space-1) 0 0; font-weight: 600; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.facts dd.num-mono { font-size: 1.2rem; }
+.facts-warning { margin-top: var(--space-4); }
 
 .stats-scroll { max-height: 520px; overflow: auto; }
 .stats-scroll thead th { position: sticky; top: 0; z-index: 1; }
 .sort-btn {
   font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
-  display: inline-flex; gap: 4px; align-items: center;
+  display: inline-flex; gap: var(--space-1); align-items: center; text-transform: inherit; letter-spacing: inherit;
 }
-.sort-btn:hover { color: var(--ink); }
+.sort-btn:hover { color: var(--accent); }
 th.num .sort-btn { flex-direction: row-reverse; }
-.sort-mark { font-size: 0.65rem; width: 0.7em; color: var(--accent); }
+th[aria-sort="ascending"] .sort-btn, th[aria-sort="descending"] .sort-btn { color: var(--accent); }
+.sort-mark { font-size: 0.6rem; width: 0.7em; color: var(--accent); }
 .data-table td.cell-warn { background: var(--warn-soft); color: var(--warn-ink); font-weight: 600; }
+.data-table tbody tr:hover > td.cell-warn { background: #fcebc0; }
 
 .chart-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px; margin-top: 16px; align-items: start;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-4); margin-top: var(--space-4); align-items: start;
 }
-.chart-card { margin: 0; border: 1px solid var(--rule); border-radius: var(--radius-s); padding: 12px 12px 4px; min-width: 0; }
-.chart-card figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.chart-title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chart-meta { font-size: 0.8rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.chart-card {
+  margin: 0; border: 1px solid var(--rule); border-radius: var(--radius-m); background: var(--surface);
+  padding: var(--space-4) var(--space-4) var(--space-1); min-width: 0; transition: border-color var(--ease);
+}
+.chart-card:hover { border-color: var(--rule-strong); }
+.chart-card figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); margin-bottom: var(--space-1); }
+.chart-title { font-family: var(--font-display); font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-meta { font-size: 0.78rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
 .plot { width: 100%; }
-.chart-empty { color: var(--muted); font-size: 0.88rem; padding: 24px 0; }
-.heatmap-wrap { max-width: 900px; margin-top: 8px; }
+.chart-empty { color: var(--muted); font-size: 0.88rem; padding: var(--space-5) 0; }
+.heatmap-wrap { max-width: 900px; margin-top: var(--space-3); }
 
 /* ---------- preprocessing ---------- */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
