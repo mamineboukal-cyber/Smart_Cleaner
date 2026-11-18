@@ -22,3 +22,10 @@ def test_singular_forms_have_a_plural_base():
     singular = [k for k in MESSAGES if k.endswith("_one")]
     assert "ui.prep.n_findings_one" in singular
     assert all(k.removesuffix("_one") in MESSAGES for k in singular)
+
+
+def test_drop_zone_labels_exist():
+    labels = ui_labels()
+    for key in ("ui.import.drop_title", "ui.import.drop_formats", "ui.import.drop_browse",
+                "ui.import.drop_release", "ui.import.replace"):
+        assert key in labels

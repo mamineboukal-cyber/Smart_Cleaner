@@ -4,6 +4,7 @@ import { useState } from "react";
 import { configure, getEda, getFindings, upload as uploadFile } from "../api.js";
 import { fmtInt } from "../format.js";
 import { errorMessage, useLabels } from "../LabelsContext.jsx";
+import DropZone from "../components/DropZone.jsx";
 import ErrorAlert from "../components/ErrorAlert.jsx";
 
 const TYPES = ["numeric", "categorical", "datetime"];
@@ -32,9 +33,7 @@ export default function ImportTab({ upload, onUploaded, onAnalysed }) {
     }
   }
 
-  function onFile(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  function onFile(f) {
     setFile(f);
     send(f);
   }
@@ -67,18 +66,12 @@ export default function ImportTab({ upload, onUploaded, onAnalysed }) {
 
       <form className="import-grid" onSubmit={analyse}>
         <div className="panel import-settings">
-          <div className="field">
-            <label htmlFor="file">{t("ui.import.file")}</label>
-            <input id="file" type="file" accept=".csv,.txt,.xlsx,.xls" onChange={onFile} disabled={busy != null} />
-            <p className="help">{t("ui.import.file_help")}</p>
-            {busy === "upload" && <p className="progress" role="status">{t("ui.import.uploading")}</p>}
-            {upload && busy !== "upload" && (
-              <p className="file-summary">
-                <strong>{upload.filename}</strong>{" "}
-                {t("ui.import.summary", { rows: fmtInt(upload.n_rows), columns: upload.columns.length })}
-              </p>
-            )}
-          </div>
+          <DropZone onFile={onFile} disabled={busy != null}
+                    file={upload && busy !== "upload" ? {
+                      name: upload.filename,
+                      summary: t("ui.import.summary", { rows: fmtInt(upload.n_rows), columns: fmtInt(upload.columns.length) }),
+                    } : null} />
+          {busy === "upload" && <p className="progress" role="status">{t("ui.import.uploading")}</p>}
 
           {upload?.sheets?.length > 1 && (
             <div className="field">

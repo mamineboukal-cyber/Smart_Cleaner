@@ -208,10 +208,52 @@ select.changed { border-color: var(--accent); background: var(--accent-soft); }
 .data-table select { padding: 5px 10px; font-size: 0.85rem; }
 
 /* ---------- import ---------- */
-.import-grid { display: grid; gap: 20px; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); align-items: start; }
-.file-summary { font-size: 0.9rem; color: var(--ink-2); overflow-wrap: anywhere; }
+.import-grid { display: grid; gap: var(--space-5); grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); align-items: start; }
+.import-settings .progress { margin-top: var(--space-2); }
+.import-settings .empty { margin-top: var(--space-4); font-size: 0.9rem; }
+.field-label { font-weight: 600; font-size: 0.92rem; }
+
+.dropzone {
+  position: relative; display: grid; justify-items: center; gap: var(--space-2); text-align: center;
+  padding: var(--space-6) var(--space-4); border: 2px dashed #b9abfa; border-radius: var(--radius-l);
+  background: #f9f7ff; color: var(--ink); font-weight: 400; cursor: pointer;
+  transition: background-color var(--ease), border-color var(--ease);
+}
+.dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dropzone.is-dragging { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.dropzone.is-disabled { opacity: 0.55; cursor: progress; }
+.dropzone.is-disabled:hover { border-color: #b9abfa; background: #f9f7ff; }
+.dropzone-icon { width: 36px; height: 36px; color: var(--accent); flex: none; }
+.dropzone-title { font-size: 0.98rem; font-weight: 600; }
+.dropzone-formats { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.dropzone-browse { margin-top: var(--space-2); pointer-events: none; }
+.dropzone:hover .dropzone-browse { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.dropzone.is-compact {
+  grid-template-columns: auto minmax(0, 1fr) auto; justify-items: start; align-items: center; text-align: left;
+  gap: var(--space-3); padding: var(--space-3) var(--space-4); border-width: 1px; border-style: solid;
+  border-color: var(--rule-strong); background: var(--surface-sunk); border-radius: var(--radius-m);
+}
+.dropzone.is-compact.is-dragging { border-style: dashed; border-width: 2px; border-color: var(--accent); background: var(--accent-soft); }
+.dropzone.is-compact .dropzone-icon { width: 28px; height: 28px; }
+.dropzone-file { display: grid; min-width: 0; }
+.dropzone-file strong { overflow-wrap: anywhere; font-size: 0.94rem; }
+.dropzone-file .num-mono { font-size: 0.8rem; color: var(--muted); }
+.dropzone-replace { font-size: 0.85rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.dropzone.is-compact:hover .dropzone-replace { text-decoration: underline; text-underline-offset: 3px; }
+
+.import-settings .choice {
+  border: 1px solid var(--rule); border-radius: var(--radius-m); padding: var(--space-3) var(--space-4);
+  transition: border-color var(--ease), background-color var(--ease);
+}
+.import-settings .choice + .choice { margin-top: var(--space-2); }
+.import-settings .choice:hover { border-color: var(--rule-strong); }
+.import-settings .choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.import-settings select { width: 100%; }
+
 .import-types .table-scroll { max-height: 560px; overflow-y: auto; }
-.import-types thead th { position: sticky; top: 0; }
+.import-types thead th { position: sticky; top: 0; z-index: 1; }
 
 @media (max-width: 860px) {
   .import-grid { grid-template-columns: 1fr; }
