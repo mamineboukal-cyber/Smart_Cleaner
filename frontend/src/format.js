@@ -7,7 +7,8 @@ export function fmt(value, missing = "") {
   if (value == null || Number.isNaN(value)) return missing;
   if (typeof value !== "number") return String(value);
   const abs = Math.abs(value);
-  if (abs !== 0 && (abs >= 1e7 || abs < 1e-3)) return value.toExponential(2);
+  if (abs < 1e-12) return "0"; // floating-point noise, e.g. the mean after standardising
+  if ((abs >= 1e7 || abs < 1e-3)) return value.toExponential(2);
   return grouped.format(value);
 }
 

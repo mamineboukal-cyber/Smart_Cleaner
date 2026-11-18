@@ -7,6 +7,7 @@ import { fmtInt } from "./format.js";
 import { LabelsContext, useLabels } from "./LabelsContext.jsx";
 import EdaTab from "./tabs/EdaTab.jsx";
 import ImportTab from "./tabs/ImportTab.jsx";
+import PreprocessingTab from "./tabs/PreprocessingTab.jsx";
 
 // The single exception to "all text comes from i18n.py": when the backend is
 // unreachable, the labels themselves cannot be loaded.
@@ -82,6 +83,29 @@ function Workspace() {
     setState((s) => ({ ...s, choices: setChoice(s.choices, column, rule, option), applied: null }));
   }, []);
 
+  const onReset = useCallback(() => {
+    setState((s) => ({ ...s, choices: defaultChoices(s.findings), scaling: {}, applied: null }));
+  }, []);
+
+  // Scaling runs last, so /preview recomputes its recommendation on the column
+  // after the earlier chosen steps. If the user had kept the old recommendation,
+  // follow the new one; an explicit different choice is left alone.
+  const onScaling = useCallback((column, finding) => {
+    setState((s) => {
+      const previous = effectiveScaling(s.findings, s.scaling, column);
+      const chosen = s.choices[column]?.scaling;
+      const follow = chosen == null || chosen === previous?.recommendation;
+      return {
+        ...s,
+        scaling: { ...s.scaling, [column]: finding },
+        choices: follow ? setChoice(s.choices, column, "scaling", finding.recommendation) : s.choices,
+        applied: follow && chosen !== finding.recommendation ? null : s.applied,
+      };
+    });
+  }, []);
+
+  const findings = useMemo(() => withScaling(state.findings, state.scaling), [state.findings, state.scaling]);
+
   const steps = useMemo(() => [
     { id: "import", label: t("ui.tab.import"),
       status: state.upload ? t("ui.step.rows", { n: fmtInt(state.upload.n_rows) }) : t("ui.step.no_file") },
@@ -113,9 +137,30 @@ function Workspace() {
             <EdaTab eda={state.eda} findings={state.findings} upload={state.upload} />
           </TabPanel>
         )}
+        {configured && (
+          <TabPanel id="preprocessing" active={tab} visited={visited}>
+            <PreprocessingTab sessionId={state.sessionId} eda={state.eda} findings={findings}
+                              scaling={state.scaling} choices={state.choices} onChoice={onChoice}
+                              onReset={onReset} onScaling={onScaling} />
+          </TabPanel>
+        )}
       </main>
     </div>
   );
+}
+
+/** The findings with each column's scaling finding replaced by its recomputed version. */
+function withScaling(findings, scaling) {
+  if (!Object.keys(scaling).length) return findings;
+  const out = findings.map((f) => (f.rule === "scaling" && scaling[f.column] ? scaling[f.column] : f));
+  for (const [column, f] of Object.entries(scaling)) {
+    if (!findings.some((g) => g.rule === "scaling" && g.column === column)) out.push(f);
+  }
+  return out;
+}
+
+function effectiveScaling(findings, scaling, column) {
+  return scaling[column] ?? findings.find((f) => f.rule === "scaling" && f.column === column);
 }
 
 function TabPanel({ id, active, visited, children }) {

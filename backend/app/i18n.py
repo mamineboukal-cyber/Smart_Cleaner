@@ -143,6 +143,42 @@ MESSAGES: dict[str, str] = {
         "Pearson r on the train split, target excluded. Blue is negative, red is positive, grey is "
         "no linear relation. Pairs above |r| = 0.95 are flagged on the Preprocessing step."
     ),
+    # --- UI: Preprocessing tab ---
+    "ui.prep.heading": "Preprocessing & cleaning",
+    "ui.prep.intro": (
+        "For each column: what was detected on the train split, the recommended step with the numbers "
+        "behind it, and every alternative. Choose one option per finding. Nothing is applied until "
+        "the Execute & export step."
+    ),
+    "ui.prep.reset": "Reset to recommendations",
+    "ui.prep.dataset_findings": "Dataset-level findings",
+    "ui.prep.columns": "Columns",
+    "ui.prep.only_warnings": "Only columns with warnings",
+    "ui.prep.no_match": "No column has a warning.",
+    "ui.prep.n_findings": "{n} findings",
+    "ui.prep.no_findings_short": "No findings",
+    "ui.prep.changed": "Changed",
+    "ui.prep.no_anomaly": "No anomaly detected. This column passes through unchanged.",
+    "ui.prep.recommendation": "Recommendation:",
+    "ui.prep.recommended": "Recommended",
+    "ui.prep.your_choice": "Your choice for {rule}",
+    "ui.prep.scaling_updated": (
+        "Recomputed by the last preview on this column after your earlier choices (scaling runs last)."
+    ),
+    "ui.prep.preview_title": "Before and after",
+    "ui.prep.preview_help": "Runs this column's chosen steps in pipeline order, fitted on the train split.",
+    "ui.prep.preview": "Preview",
+    "ui.prep.previewing": "Computing…",
+    "ui.prep.preview_stale": "Your choices changed since this preview. Preview again to update it.",
+    "ui.prep.before": "Before (raw train)",
+    "ui.prep.after": "After",
+    "ui.prep.before_short": "Before",
+    "ui.prep.after_short": "After",
+    "ui.prep.after_column": "Output column",
+    "ui.prep.after_many": "This step outputs {n} columns. Pick one above to inspect it.",
+    "ui.prep.dropped": "The column is dropped, so there is nothing to show after.",
+    "ui.prep.rows_dropped": "{n} train rows are dropped by your choices. Test rows are kept and transformed.",
+    "ui.prep.stat": "Statistic",
     "ui.eda.no_correlation": "There are fewer than two numeric columns, so there is no correlation matrix.",
     # --- Reasons (rule.recommendation) ---
     "reason.constant.drop_column": (
