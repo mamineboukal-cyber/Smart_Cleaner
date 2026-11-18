@@ -97,7 +97,7 @@ MESSAGES: dict[str, str] = {
     "ui.option.standard": "StandardScaler",
     "ui.option.minmax": "MinMaxScaler",
     "ui.option.robust": "RobustScaler",
-    "ui.option.extract": "Extract date parts",
+    "ui.option.extract": "Extract date/time parts",
     "ui.option.remove": "Remove",
     "ui.option.class_weight_balanced": "class_weight=\"balanced\"",
     "ui.stat.missing_pct": "Missing %",
@@ -230,6 +230,10 @@ MESSAGES: dict[str, str] = {
         "The column holds dates. A raw timestamp is not usable by most models, but its calendar "
         "parts (year, month, day, day of week) are."
     ),
+    "reason.datetime.extract_time": (
+        "The column holds times of day with no date. A raw time string is not usable by most "
+        "models, but its hour and minute are, so those two parts are extracted."
+    ),
     "reason.datetime.drop_column": (
         "{parse_pct}% of values parse as dates (between {low}% and {high}%): possible date with an "
         "inconsistent format. No extraction is attempted."
@@ -311,6 +315,7 @@ MESSAGES: dict[str, str] = {
     "tradeoff.keep": "Keeps the column unchanged; the model sees it as-is.",
     "tradeoff.drop_column": "Removes the column; any information it holds is lost.",
     "tradeoff.extract": "Replaces the date with year, month, day and day-of-week columns.",
+    "tradeoff.extract_time": "Replaces the time with hour and minute columns.",
     "tradeoff.none": "Leaves the column untouched by this step.",
     "tradeoff.mean": "Fills gaps with the train mean; sensitive to long tails and extreme values.",
     "tradeoff.median": "Fills gaps with the train median; robust to extreme values.",

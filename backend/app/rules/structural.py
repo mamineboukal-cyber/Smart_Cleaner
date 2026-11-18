@@ -7,11 +7,11 @@ import pandas as pd
 
 from app.findings import (
     CONSTANT, DATETIME, DROP_COLUMN, EXTRACT, FREE_TEXT, ID_LIKE, KEEP,
-    Finding,
+    Alternative, Finding,
 )
 from app.i18n import t
 from app.rules.context import alternatives
-from app.types import DATETIME_PARSE_MIN, date_parse_rate
+from app.types import DATETIME_PARSE_MIN, date_parse_rate, is_time_only
 
 CONSTANT_TOP_PCT = 99          # top value covers >= 99% of rows
 ID_UNIQUE_RATIO = 0.95         # >= 95% of values are distinct
@@ -61,6 +61,9 @@ def check_free_text(s: pd.Series, ctx) -> Finding | None:
 
 def check_datetime(s: pd.Series, ctx) -> Finding | None:
     if ctx.col_type == "datetime":
+        if is_time_only(s):   # "14:32": hour and minute, not a meaningless year/month/day
+            return Finding(str(s.name), DATETIME, {"time_only": True}, EXTRACT, t("reason.datetime.extract_time"),
+                           [Alternative(EXTRACT, t("tradeoff.extract_time")), *alternatives(DROP_COLUMN, KEEP)])
         reason = t("reason.datetime.extract")
         return Finding(str(s.name), DATETIME, {}, EXTRACT, reason, alternatives(EXTRACT, DROP_COLUMN, KEEP))
     if ctx.col_type != "categorical" or pd.api.types.is_numeric_dtype(s):

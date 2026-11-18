@@ -159,3 +159,16 @@ def test_scaling_fitted_after_imputation():
     p = ColumnPipeline("x", "numeric", {"missing": "constant", "scaling": "standard"}).fit(train)
     filled = pd.Series([0.0, 10.0, 0.0])
     assert np.isclose(p.params["scaling"]["center"], filled.mean())
+
+
+def test_time_only_extracts_hour_and_minute():
+    import datetime as dt
+
+    train = pd.DataFrame({"heure": ["14:32:05", "09:15:00", "10:00:00", None]})
+    test = pd.DataFrame({"heure": [dt.time(23, 7), None]}, index=[10, 11])   # Excel time cells
+    p = ColumnPipeline("heure", "datetime", {"datetime": "extract"}).fit(train)
+    out = p.transform(test, False)
+    assert list(out.columns) == ["heure_hour", "heure_minute"]
+    assert out.loc[10].tolist() == [23, 7]
+    assert out.loc[11].tolist() == [10, 15]   # NaT -> train median of each part
+    assert p.params["datetime"]["parts"] == ["hour", "minute"]

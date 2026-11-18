@@ -9,7 +9,6 @@ Step order per column (spec §8):
 Each step is fitted on the train values produced by the steps before it.
 """
 
-import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -25,20 +24,15 @@ from app.profiling import column_stats, iqr_fences
 from app.rules.context import ColumnContext
 from app.rules.encoding import check_scaling
 from app.split import SplitResult
+from app.types import is_time_only, to_datetime
 
 MISSING_LABEL = "Missing"
 # output suffix -> pandas .dt accessor
 DATE_PARTS = {"year": "year", "month": "month", "day": "day", "dayofweek": "day_of_week"}
+TIME_PARTS = {"hour": "hour", "minute": "minute"}   # time-only columns ("14:32"): no calendar date
+DATETIME_PARTS = {**DATE_PARTS, **TIME_PARTS}
 NO_OP = (NONE, KEEP)
 PRE_STEPS = (MISSING, OUTLIERS, SKEWNESS)   # steps 3-5
-
-
-def _to_datetime(s: pd.Series) -> pd.Series:
-    if pd.api.types.is_datetime64_any_dtype(s):
-        return s
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        return pd.to_datetime(s, errors="coerce", format="mixed")
 
 
 class ColumnPipeline:
@@ -179,19 +173,22 @@ class ColumnPipeline:
 
     # ----- datetime (step 2) -----
     def _fit_datetime(self, s: pd.Series) -> None:
-        d = _to_datetime(s)
+        # Decided on train, then reused for test: both splits get the same columns.
+        parts = TIME_PARTS if is_time_only(s) else DATE_PARTS
+        d = to_datetime(s)
         fill = {}
-        for part, attr in DATE_PARTS.items():
+        for part, attr in parts.items():
             med = getattr(d.dt, attr).median()
             fill[part] = int(round(med)) if pd.notna(med) else 0
-        self.params[DATETIME] = {"fill": fill}
+        self.params[DATETIME] = {"parts": list(parts), "fill": fill}
         self._applied[DATETIME] = EXTRACT
 
     def _transform_datetime(self, s: pd.Series) -> pd.DataFrame:
-        d = _to_datetime(s)
-        fill = self.params[DATETIME]["fill"]
+        d = to_datetime(s)
+        p = self.params[DATETIME]
         return pd.DataFrame(
-            {f"{self.column}_{p}": getattr(d.dt, attr).fillna(fill[p]).astype("int64") for p, attr in DATE_PARTS.items()},
+            {f"{self.column}_{part}": getattr(d.dt, DATETIME_PARTS[part]).fillna(p["fill"][part]).astype("int64")
+             for part in p["parts"]},
             index=s.index,
         )
 

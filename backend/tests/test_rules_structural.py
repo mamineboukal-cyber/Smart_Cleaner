@@ -76,3 +76,12 @@ def test_inconsistent_dates_flagged():
 def test_plain_categories_not_flagged_as_dates():
     s = pd.Series(["red", "green"] * 5)
     assert check_datetime(s, ctx_for(s, "categorical")) is None
+
+
+def test_time_only_column_extracts_hour_and_minute():
+    s = pd.Series(["14:32:05", "09:15:00", "23:59:59"] * 4)
+    f = check_datetime(s, ctx_for(s, "datetime"))
+    assert f.recommendation == "extract" and f.stats == {"time_only": True}
+    assert "hour" in f.reason and "year" not in f.reason
+    extract = next(a for a in f.alternatives if a.option == "extract")
+    assert "hour" in extract.tradeoff and "year" not in extract.tradeoff

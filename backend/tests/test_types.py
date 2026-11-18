@@ -36,3 +36,15 @@ def test_overrides_replace_types():
         "a": "categorical",
         "b": "numeric",
     }
+
+
+def test_time_only_detection():
+    import datetime as dt
+
+    from app.types import is_time_only
+
+    assert is_time_only(pd.Series(["14:32:05", "09:15", "23:59:59", None]))
+    assert is_time_only(pd.Series([dt.time(14, 3), dt.time(9, 5)]))   # Excel time cells
+    assert not is_time_only(pd.Series(["2020-01-01 14:32", "2020-01-02 09:15"]))
+    assert not is_time_only(pd.Series(pd.date_range("2020-01-01", periods=3, freq="h")))
+    assert not is_time_only(pd.Series(["a", "b"]))
