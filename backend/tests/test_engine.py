@@ -49,3 +49,13 @@ def test_unsupervised_has_no_imbalance(mixed_df):
     split = prepare_and_split(mixed_df, "unsupervised", None)
     findings, stats = run_rules(split, infer_types(mixed_df), None)
     assert not any(f.rule == "imbalance" for f in findings) and "target" in stats
+
+
+def test_no_encoding_or_scaling_for_columns_recommended_for_drop(mixed_df):
+    df = mixed_df.assign(sym_copy=mixed_df["sym"] * 2)   # dropped by the correlation rule
+    findings, _ = _run(df)
+    rules = {(f.column, f.rule) for f in findings}
+    assert ("id_col", "id_like") in rules and ("id_col", "scaling") not in rules
+    assert ("const_col", "constant") in rules and ("const_col", "encoding") not in rules
+    assert ("sym_copy", "correlation") in rules and ("sym_copy", "scaling") not in rules
+    assert ("sym", "scaling") in rules and ("cat", "encoding") in rules   # kept columns unchanged

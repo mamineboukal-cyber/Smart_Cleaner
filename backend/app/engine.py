@@ -3,11 +3,15 @@
 Never crash: each rule call is guarded. If a rule raises on a column, that
 column gets an "analysis_failed" finding (default option "none") and the rest
 of the dataset is still analysed.
+
+A column recommended for dropping (constant, ID-like, free text, too many
+missing values, correlated...) gets no encoding or scaling finding: those steps
+would only matter for a column the recommendation removes anyway.
 """
 
 import pandas as pd
 
-from app.findings import ANALYSIS_FAILED, NONE, Alternative, Finding
+from app.findings import ANALYSIS_FAILED, DROP_COLUMN, ENCODING, NONE, SCALING, Alternative, Finding
 from app.i18n import t
 from app.profiling import column_stats
 from app.rules.context import ColumnContext
@@ -73,4 +77,9 @@ def run_rules(split: SplitResult, types: dict[str, str], target: str | None
     _guarded(findings, None, check_correlation, train, numeric_cols, missing)
     if split.task == "classification":
         _guarded(findings, str(target), check_imbalance, y)
-    return findings, stats
+    return _skip_post_steps_of_dropped(findings), stats
+
+
+def _skip_post_steps_of_dropped(findings: list[Finding]) -> list[Finding]:
+    dropped = {f.column for f in findings if f.column is not None and f.recommendation == DROP_COLUMN}
+    return [f for f in findings if not (f.column in dropped and f.rule in (ENCODING, SCALING))]
