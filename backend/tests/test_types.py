@@ -48,3 +48,10 @@ def test_time_only_detection():
     assert not is_time_only(pd.Series(["2020-01-01 14:32", "2020-01-02 09:15"]))
     assert not is_time_only(pd.Series(pd.date_range("2020-01-01", periods=3, freq="h")))
     assert not is_time_only(pd.Series(["a", "b"]))
+
+
+def test_letter_prefixed_ids_are_not_dates():
+    # dateutil reads "T15" as day 15 and "T2399" as year 2399; an ID is not a date.
+    from app.types import infer_column_type
+
+    assert infer_column_type(pd.Series([f"T{i}" for i in range(3000)])) == "categorical"

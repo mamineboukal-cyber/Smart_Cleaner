@@ -59,3 +59,10 @@ def test_no_encoding_or_scaling_for_columns_recommended_for_drop(mixed_df):
     assert ("const_col", "constant") in rules and ("const_col", "encoding") not in rules
     assert ("sym_copy", "correlation") in rules and ("sym_copy", "scaling") not in rules
     assert ("sym", "scaling") in rules and ("cat", "encoding") in rules   # kept columns unchanged
+
+
+def test_letter_prefixed_id_column_is_id_like(mixed_df):
+    df = mixed_df.assign(tx_id=[f"T{i}" for i in range(len(mixed_df))])
+    findings, _ = _run(df)
+    f = next(f for f in findings if f.column == "tx_id" and f.rule in ("id_like", "datetime"))
+    assert (f.rule, f.recommendation) == ("id_like", "drop_column")
