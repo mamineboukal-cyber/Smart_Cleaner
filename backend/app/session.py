@@ -24,6 +24,7 @@ class Session:
     sheets: list[str]
     types: dict                      # effective types (inferred + user overrides)
     inferred_types: dict = field(default_factory=dict)
+    repairs: dict = field(default_factory=dict)   # {column: cells repaired at upload} (Excel-swapped dates)
     mode: str | None = None
     target: str | None = None
     split: SplitResult | None = None

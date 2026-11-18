@@ -20,7 +20,7 @@ from app.profiling import chart_data, column_stats, correlation_matrix
 from app.report import build_report, build_zip
 from app.split import prepare_and_split
 from app.transforms import apply_all
-from app.types import apply_type_overrides, infer_types
+from app.types import apply_type_overrides, infer_types, repair_excel_swapped_dates
 
 COLUMN_TYPES = ("numeric", "categorical", "datetime")
 
@@ -88,12 +88,14 @@ async def upload(file: UploadFile = File(...), sheet: str | None = Form(None)) -
     df.columns = [str(c) for c in df.columns]
     if df.empty or df.shape[1] == 0:
         raise HTTPException(status_code=400, detail=t("error.empty_file"))
+    # Parsing, like type inference: a per-cell format fix, not a statistic, so it runs before the split.
+    df, repairs = repair_excel_swapped_dates(df)
     types = infer_types(df)
     chosen_sheet = (sheet or sheets[0]) if sheets else None
     sid = store.create(store.Session(raw=df, filename=filename, sheet=chosen_sheet, sheets=sheets,
-                                     types=dict(types), inferred_types=types))
+                                     types=dict(types), inferred_types=types, repairs=repairs))
     return {"session_id": sid, "filename": filename, "sheets": sheets, "sheet": chosen_sheet,
-            "columns": list(df.columns), "types": types, "n_rows": len(df)}
+            "columns": list(df.columns), "types": types, "n_rows": len(df), "repairs": repairs}
 
 
 @app.post("/configure")
@@ -109,6 +111,8 @@ def configure(req: ConfigureRequest) -> dict:
     s.types = apply_type_overrides(s.inferred_types, req.type_overrides)
     s.mode, s.target = req.mode, target
     s.split = prepare_and_split(s.raw, req.mode, target)
+    # Shown in the EDA banner and the report's Dataset sheet, with the split warnings.
+    s.split.warnings[:0] = [t("warning.excel_dates_repaired", column=col, count=n) for col, n in s.repairs.items()]
     s.findings, s.stats = run_rules(s.split, s.types, target)
     s.result, s.choices = None, {}
     return _dataset_summary(s)

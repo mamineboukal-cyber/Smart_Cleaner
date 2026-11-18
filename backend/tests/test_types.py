@@ -104,3 +104,38 @@ def test_day_first_never_flips_iso_values_in_a_mixed_column():
     d = _dates(["2025-01-07 00:00:00", "13/07/2025", "2025-12-08", "05/01/2025", None])
     assert [(x.month, x.day) for x in d[:4]] == [(1, 7), (7, 13), (12, 8), (1, 5)]
     assert pd.isna(d[4])
+
+
+def _excel_damaged_column():
+    """What Excel (month-first locale) leaves from day-first text 01/07..31/07/2025:
+    days <= 12 became real dates with day and month swapped, days 13-31 stayed text."""
+    import datetime as dt
+    return pd.Series([dt.datetime(2025, m, 7) for m in range(1, 13)]
+                     + [f"{d}/07/2025" for d in range(13, 32)], dtype=object)
+
+
+def test_excel_swapped_dates_repaired():
+    from app.types import repair_excel_swapped_dates, to_datetime
+    df = pd.DataFrame({"date": _excel_damaged_column(), "x": range(31)})
+    fixed, repairs = repair_excel_swapped_dates(df)
+    assert repairs == {"date": 12}
+    d = to_datetime(fixed["date"])
+    assert d.tolist() == pd.date_range("2025-07-01", "2025-07-31").tolist()   # 1 July .. 31 July, in order
+    assert fixed["date"].iloc[20] == "21/07/2025"                              # text cells untouched
+    assert df["date"].iloc[0].month == 1                                       # input not modified
+
+
+def test_excel_repair_needs_the_full_signature():
+    import datetime as dt
+    from app.types import repair_excel_swapped_dates
+    real = pd.Series([dt.datetime(2025, 7, d) for d in range(1, 29)], dtype=object)
+    cases = {
+        "genuine dates with day > 12": pd.concat([real, pd.Series(["29/07/2025", "30/07/2025"])], ignore_index=True),
+        "text with day <= 12 left as text": pd.concat([_excel_damaged_column(), pd.Series(["05/07/2025"])], ignore_index=True),
+        "only real dates": real,
+        "only text": pd.Series([f"{d}/07/2025" for d in range(13, 32)]),
+        "date cells with a time": pd.Series([dt.datetime(2025, 3, 7, 14, 30), "13/07/2025"], dtype=object),
+    }
+    for name, s in cases.items():
+        _, repairs = repair_excel_swapped_dates(pd.DataFrame({"d": s}))
+        assert repairs == {}, name

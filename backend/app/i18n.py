@@ -397,6 +397,11 @@ MESSAGES: dict[str, str] = {
         "Class '{cls}' has only {count} row(s), so a stratified split is impossible; "
         "a plain random split was used instead."
     ),
+    "warning.excel_dates_repaired": (
+        "Column '{column}': {count} date cell(s) had day and month swapped by Excel, which read "
+        "day-first text (01/07/2025) as month-first (7 January). Its other values are dd/mm/yyyy "
+        "text with a day above 12, so the swap was undone (01/07/2025 is 1 July)."
+    ),
     # --- Errors ---
     "error.unreadable_file": "The file could not be read. Upload a CSV or Excel (.xlsx) file.",
     "error.unknown_sheet": "Sheet '{sheet}' does not exist in this workbook.",

@@ -141,3 +141,22 @@ def test_same_file_and_settings_give_identical_results(c, mixed_df_csv_bytes):
     assert first[0] == second[0]          # EDA stats, charts, correlation, split summary
     assert first[1] == second[1]          # findings
     assert first[2] == second[2] and first[3] == second[3]
+
+
+def test_excel_swapped_dates_repaired_and_flagged(c):
+    import datetime as dt
+    rng = np.random.default_rng(0)
+    true = [(int(rng.integers(1, 29)), int(rng.integers(7, 10))) for _ in range(200)]   # (day, month), Jul-Sep
+    # What Excel leaves from "dd/mm/2025" text: days <= 12 become real dates with day and month swapped.
+    dates = [dt.datetime(2025, day, month) if day <= 12 else f"{day:02d}/{month:02d}/2025" for day, month in true]
+    df = pd.DataFrame({"date": pd.Series(dates, dtype=object), "y": rng.integers(0, 2, 200)})
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False)
+    up = c.post("/upload", files={"file": ("f.xlsx", buf.getvalue())}).json()
+    n_swapped = sum(isinstance(x, dt.datetime) for x in dates)
+    assert up["repairs"] == {"date": n_swapped}
+    conf = c.post("/configure", json={"session_id": up["session_id"], "mode": "supervised", "target": "y"}).json()
+    assert any("date" in w and str(n_swapped) in w for w in conf["warnings"])
+    chart = next(x for x in c.get("/eda", params={"session_id": up["session_id"]}).json()["columns"]
+                 if x["name"] == "date")["chart"]
+    assert chart["edges"][0] >= "2025-07-01" and chart["edges"][-1] <= "2025-10-01"   # July-September only

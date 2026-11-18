@@ -1,5 +1,6 @@
 """Column type inference: numeric, categorical or datetime."""
 
+import datetime
 import re
 import warnings
 
@@ -35,6 +36,44 @@ def detect_dayfirst(s: pd.Series) -> bool:
         return False
     first, second = parts[0].astype(int), parts[1].astype(int)
     return bool((first > 12).sum() >= (second > 12).sum())
+
+
+def _excel_swapped_cells(s: pd.Series) -> pd.Series | None:
+    """Mask of date cells that Excel created by misreading day-first text, or None.
+
+    Excel in a month-first locale converts "01/07/2025" (1 July) into the date
+    7 January, but leaves "13/07/2025" as text (there is no month 13). The
+    signature, all required: text cells are dd/mm/yyyy with a day > 12; real
+    date cells exist, all at midnight with a day <= 12 (genuine dates over a
+    period would include days 13-31)."""
+    if not pd.api.types.is_object_dtype(s):
+        return None
+    values = s.dropna()
+    is_date = values.map(lambda v: isinstance(v, datetime.datetime))
+    text = values[~is_date].astype(str)
+    parts = text.str.extract(NUMERIC_DATE).dropna()
+    if not is_date.any() or parts.empty or len(parts) < len(text) * DATETIME_PARSE_MIN:
+        return None
+    if not (parts[0].astype(int) > 12).all():
+        return None   # Excel could have converted these but didn't: not its doing
+    dates = pd.to_datetime(values[is_date])
+    if not ((dates.dt.day <= 12) & (dates == dates.dt.normalize())).all():
+        return None
+    return is_date.reindex(s.index, fill_value=False)
+
+
+def repair_excel_swapped_dates(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Swap day and month back in date cells Excel misread (see ``_excel_swapped_cells``).
+    Returns a repaired copy and {column: number of cells repaired}."""
+    out, repairs = df.copy(), {}
+    for col in df.columns:
+        mask = _excel_swapped_cells(df[col])
+        if mask is None:
+            continue
+        out[col] = df[col].astype(object)
+        out.loc[mask, col] = df.loc[mask, col].map(lambda v: v.replace(month=v.day, day=v.month))
+        repairs[str(col)] = int(mask.sum())
+    return out, repairs
 
 
 def to_datetime(s: pd.Series, dayfirst: bool | None = None) -> pd.Series:
