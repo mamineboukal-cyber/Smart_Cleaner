@@ -96,3 +96,11 @@ def test_iso_and_real_datetimes_unaffected():
 def test_explicit_dayfirst_overrides_detection():
     d = _dates(["01/13/2025", "05/01/2025"], dayfirst=True)   # e.g. decided on train
     assert (d[1].month, d[1].day) == (1, 5)
+
+
+def test_day_first_never_flips_iso_values_in_a_mixed_column():
+    """Excel files mix real date cells (read as "2025-01-07 00:00:00") with dd/mm/yyyy text.
+    Day-first applies to the dd/mm/yyyy values only; ISO values keep year-month-day."""
+    d = _dates(["2025-01-07 00:00:00", "13/07/2025", "2025-12-08", "05/01/2025", None])
+    assert [(x.month, x.day) for x in d[:4]] == [(1, 7), (7, 13), (12, 8), (1, 5)]
+    assert pd.isna(d[4])

@@ -48,10 +48,16 @@ def to_datetime(s: pd.Series, dayfirst: bool | None = None) -> pd.Series:
         return s
     if dayfirst is None:
         dayfirst = detect_dayfirst(s)
+    text = s.astype(str).where(s.notna())
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return pd.to_datetime(s.astype(str).where(s.notna()), errors="coerce", format="mixed",
-                              dayfirst=dayfirst)
+        parsed = pd.to_datetime(text, errors="coerce", format="mixed")
+        if dayfirst:
+            # Only dd/mm/yyyy-shaped values: with dayfirst, pandas would also read "2025-01-07" as 1 July.
+            ddmm = text.str.contains(NUMERIC_DATE, na=False)
+            if ddmm.any():
+                parsed[ddmm] = pd.to_datetime(text[ddmm], errors="coerce", format="mixed", dayfirst=True)
+    return parsed
 
 
 def is_time_only(s: pd.Series) -> bool:
@@ -71,7 +77,7 @@ def date_parse_rate(s: pd.Series) -> float:
         return 0.0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        parsed = pd.to_datetime(values, errors="coerce", format="mixed", dayfirst=detect_dayfirst(values))
+        parsed = to_datetime(values)
     return float((parsed.notna() & values.str.contains(DATE_SHAPE)).mean())
 
 
