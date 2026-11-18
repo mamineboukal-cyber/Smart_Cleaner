@@ -55,3 +55,44 @@ def test_letter_prefixed_ids_are_not_dates():
     from app.types import infer_column_type
 
     assert infer_column_type(pd.Series([f"T{i}" for i in range(3000)])) == "categorical"
+
+
+def _dates(values, **kw):
+    from app.types import to_datetime
+    return to_datetime(pd.Series(values), **kw)
+
+
+def test_day_first_detected_from_unambiguous_value():
+    from app.types import detect_dayfirst
+    s = pd.Series(["27/09/2025", "05/01/2025", None])
+    assert detect_dayfirst(s) is True
+    d = _dates(s)
+    assert (d[0].month, d[0].day) == (9, 27) and (d[1].month, d[1].day) == (1, 5)   # 5 January
+
+
+def test_month_first_detected_from_unambiguous_value():
+    from app.types import detect_dayfirst
+    s = pd.Series(["09/27/2025", "05/01/2025"])
+    assert detect_dayfirst(s) is False
+    d = _dates(s)
+    assert (d[0].month, d[0].day) == (9, 27) and (d[1].month, d[1].day) == (5, 1)    # 1 May
+
+
+def test_all_ambiguous_defaults_to_day_first():
+    d = _dates(["05/01/2025", "03/02/2025 14:30", "07.08.2025", "01-02-2025"])
+    assert [(x.month, x.day) for x in d] == [(1, 5), (2, 3), (8, 7), (2, 1)]
+    assert d[1].hour == 14 and d[1].minute == 30
+
+
+def test_iso_and_real_datetimes_unaffected():
+    from app.types import detect_dayfirst
+    d = _dates(["2025-01-05", "2025-01-05 08:00:00", "2025-12-31"])
+    assert [(x.month, x.day) for x in d] == [(1, 5), (1, 5), (12, 31)]
+    assert detect_dayfirst(pd.Series(["2025-01-05"])) is False
+    real = pd.Series(pd.to_datetime(["2025-01-05"]))
+    assert _dates(real)[0].month == 1
+
+
+def test_explicit_dayfirst_overrides_detection():
+    d = _dates(["01/13/2025", "05/01/2025"], dayfirst=True)   # e.g. decided on train
+    assert (d[1].month, d[1].day) == (1, 5)

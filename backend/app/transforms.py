@@ -24,7 +24,7 @@ from app.profiling import column_stats, iqr_fences
 from app.rules.context import ColumnContext
 from app.rules.encoding import check_scaling
 from app.split import SplitResult
-from app.types import is_time_only, to_datetime
+from app.types import detect_dayfirst, is_time_only, to_datetime
 
 MISSING_LABEL = "Missing"
 # output suffix -> pandas .dt accessor
@@ -174,18 +174,20 @@ class ColumnPipeline:
     # ----- datetime (step 2) -----
     def _fit_datetime(self, s: pd.Series) -> None:
         # Decided on train, then reused for test: both splits get the same columns.
+        # Day/month order is decided on train too, so "05/01" means the same date in both splits.
         parts = TIME_PARTS if is_time_only(s) else DATE_PARTS
-        d = to_datetime(s)
+        dayfirst = detect_dayfirst(s)
+        d = to_datetime(s, dayfirst=dayfirst)
         fill = {}
         for part, attr in parts.items():
             med = getattr(d.dt, attr).median()
             fill[part] = int(round(med)) if pd.notna(med) else 0
-        self.params[DATETIME] = {"parts": list(parts), "fill": fill}
+        self.params[DATETIME] = {"parts": list(parts), "fill": fill, "dayfirst": dayfirst}
         self._applied[DATETIME] = EXTRACT
 
     def _transform_datetime(self, s: pd.Series) -> pd.DataFrame:
-        d = to_datetime(s)
         p = self.params[DATETIME]
+        d = to_datetime(s, dayfirst=p["dayfirst"])
         return pd.DataFrame(
             {f"{self.column}_{part}": getattr(d.dt, DATETIME_PARTS[part]).fillna(p["fill"][part]).astype("int64")
              for part in p["parts"]},

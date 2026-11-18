@@ -172,3 +172,13 @@ def test_time_only_extracts_hour_and_minute():
     assert out.loc[10].tolist() == [23, 7]
     assert out.loc[11].tolist() == [10, 15]   # NaT -> train median of each part
     assert p.params["datetime"]["parts"] == ["hour", "minute"]
+
+
+def test_datetime_order_fitted_on_train_reused_on_test():
+    """Train shows dd/mm (27/09); test alone would look mm/dd (02/13). Test must follow train."""
+    train = pd.DataFrame({"d": ["27/09/2025", "15/03/2025", "05/01/2025"]})
+    test = pd.DataFrame({"d": ["05/01/2025", "02/13/2025"]})
+    p = ColumnPipeline("d", "datetime", {"datetime": "extract"}).fit(train)
+    assert p.params["datetime"]["dayfirst"] is True
+    out = p.transform(test, False)
+    assert out.loc[0, ["d_month", "d_day"]].tolist() == [1, 5]          # 5 January, not 1 May

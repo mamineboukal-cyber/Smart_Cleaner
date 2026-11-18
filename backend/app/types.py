@@ -16,15 +16,42 @@ DATE_SHAPE = re.compile(r"\d+\D+\d+")
 TIME_ONLY = re.compile(r"^\d{1,2}:\d{2}(:\d{2}(\.\d+)?)?(\s*[AaPp]\.?[Mm]\.?)?$")
 
 
-def to_datetime(s: pd.Series) -> pd.Series:
+# "27/09/2025", "05.01.2025 14:30", "1-2-25": two 1-2 digit groups before the year.
+# ISO dates ("2025-01-05") start with the year and never match, so they are unaffected.
+NUMERIC_DATE = re.compile(r"^\s*(\d{1,2})[/.\-](\d{1,2})[/.\-]\d{2,4}\b")
+
+
+def detect_dayfirst(s: pd.Series) -> bool:
+    """Whether "dd/mm/yyyy"-style values put the day first.
+
+    An unambiguous value decides: 27/09 can only be day-first, 09/27 only
+    month-first (the majority wins if a column has both). When every value is
+    ambiguous (05/01), day-first is assumed: the data and users are European.
+    Returns False when no value has this shape (ISO dates, real datetimes)."""
+    if pd.api.types.is_datetime64_any_dtype(s):
+        return False
+    parts = s.dropna().astype(str).head(DATETIME_SAMPLE).str.extract(NUMERIC_DATE).dropna()
+    if parts.empty:
+        return False
+    first, second = parts[0].astype(int), parts[1].astype(int)
+    return bool((first > 12).sum() >= (second > 12).sum())
+
+
+def to_datetime(s: pd.Series, dayfirst: bool | None = None) -> pd.Series:
     """Parse to datetime64 (unparseable -> NaT). Values go through str first, so
     Excel time cells (``datetime.time``) parse too; a time of day gets today's
-    date, which callers that only read the hour/minute ignore."""
+    date, which callers that only read the hour/minute ignore.
+
+    ``dayfirst`` is detected from ``s`` when not given; pass the value decided on
+    train so the test split is read the same way."""
     if pd.api.types.is_datetime64_any_dtype(s):
         return s
+    if dayfirst is None:
+        dayfirst = detect_dayfirst(s)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return pd.to_datetime(s.astype(str).where(s.notna()), errors="coerce", format="mixed")
+        return pd.to_datetime(s.astype(str).where(s.notna()), errors="coerce", format="mixed",
+                              dayfirst=dayfirst)
 
 
 def is_time_only(s: pd.Series) -> bool:
@@ -44,7 +71,7 @@ def date_parse_rate(s: pd.Series) -> float:
         return 0.0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        parsed = pd.to_datetime(values, errors="coerce", format="mixed")
+        parsed = pd.to_datetime(values, errors="coerce", format="mixed", dayfirst=detect_dayfirst(values))
     return float((parsed.notna() & values.str.contains(DATE_SHAPE)).mean())
 
 
