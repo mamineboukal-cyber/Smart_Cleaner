@@ -20,10 +20,6 @@
   --lime: #c6f432;
   --teal: #0d9488;
 
-  /* kept until the header is redesigned (Task 4) */
-  --mast: #1b2a38;
-  --mast-ink: #eef2f5;
-  --mast-muted: #a9b6c2;
 
   --warn: #e8a10c;
   --warn-soft: #fef3d6;
@@ -78,38 +74,43 @@ p { margin: 0; }
 .num-mono { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 
 /* ---------- masthead + stepper ---------- */
-.masthead { background: var(--mast); color: var(--mast-ink); }
+.masthead { background: var(--surface); color: var(--ink); border-bottom: 1px solid var(--rule); }
 .masthead-inner {
-  max-width: 1280px; margin: 0 auto; padding: 18px 24px 0;
-  display: grid; gap: 14px;
+  max-width: 1280px; margin: 0 auto; padding: var(--space-5) var(--space-5) 0;
+  display: grid; gap: var(--space-4);
 }
-.brand { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-.brand h1 { font-size: 1.25rem; font-weight: 750; letter-spacing: -0.02em; }
-.brand p { color: var(--mast-muted); font-size: 0.9rem; }
+.brand { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); align-items: center; }
+.brand .logo { grid-row: span 2; display: block; }
+.brand h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+.brand p { color: var(--muted); font-size: 0.88rem; }
 
 .stepper {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2);
 }
 .step {
-  width: 100%; display: flex; align-items: flex-start; gap: 10px;
-  padding: 10px 12px 14px; border: 0; background: none; color: var(--mast-muted);
-  font: inherit; text-align: left; cursor: pointer;
-  border-bottom: 3px solid transparent;
+  width: 100%; display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-4); border: 0; background: none; color: var(--muted);
+  font: inherit; text-align: left; cursor: pointer; border-radius: var(--radius-s) var(--radius-s) 0 0;
+  border-bottom: 3px solid transparent; transition: color var(--ease), background-color var(--ease), border-color var(--ease);
 }
-.step:hover:not(:disabled) { color: var(--mast-ink); }
-.step[aria-selected="true"] { color: var(--mast-ink); border-bottom-color: #6da7ec; }
-.step:disabled { cursor: not-allowed; opacity: 0.5; }
-.step:focus-visible { outline-color: #9ec5f4; outline-offset: -2px; }
+.step:hover:not(:disabled) { color: var(--ink); background: var(--surface-sunk); }
+.step[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.step:disabled { cursor: not-allowed; opacity: 0.45; }
+.step:focus-visible { outline-offset: -2px; }
 .step-index {
-  flex: none; width: 24px; height: 24px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 0.8rem; font-weight: 700;
+  position: relative; flex: none; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
   border: 1.5px solid currentColor;
 }
-.step[aria-selected="true"] .step-index { background: #6da7ec; border-color: #6da7ec; color: var(--mast); }
+.step[aria-selected="true"] .step-index { background: var(--accent); border-color: var(--accent); color: #fff; }
+.step[aria-selected="true"] .step-index::after {
+  content: ""; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--lime); box-shadow: 0 0 0 2px var(--surface);
+}
 .step-text { display: grid; min-width: 0; }
-.step-label { font-weight: 600; font-size: 0.92rem; }
-.step-status { font-size: 0.8rem; color: var(--mast-muted); min-height: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-label { font-weight: 600; font-size: 0.94rem; }
+.step-status { font-size: 0.8rem; color: var(--muted); min-height: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- page ---------- */
 .page { max-width: 1280px; margin: 0 auto; padding: var(--space-6) var(--space-5) var(--space-7); }

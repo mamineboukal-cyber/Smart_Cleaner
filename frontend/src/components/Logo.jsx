@@ -1,0 +1,15 @@
+// Smart Cleaner mark: scattered data points (faint lime dots) resolving into a
+// clean check. Same drawing as public/favicon.svg. Decorative: the wordmark next
+// to it carries the name.
+export default function Logo({ size = 36 }) {
+  return (
+    <svg className="logo" width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="38" height="38" rx="13" fill="#5B3DF5" />
+      <circle cx="9" cy="12" r="2.2" fill="#C6F432" opacity="0.6" />
+      <circle cx="14" cy="8" r="1.6" fill="#C6F432" opacity="0.45" />
+      <circle cx="7" cy="19" r="1.4" fill="#C6F432" opacity="0.4" />
+      <path d="M11 21.5l6.5 6.5L31 13" fill="none" stroke="#C6F432" strokeWidth="4.2"
+            strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

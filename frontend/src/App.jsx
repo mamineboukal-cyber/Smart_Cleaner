@@ -5,6 +5,7 @@ import { NetworkError, getLabels } from "./api.js";
 import { defaultChoices, followScaling, setChoice } from "./choices.js";
 import { fmtInt } from "./format.js";
 import { LabelsContext, useLabels } from "./LabelsContext.jsx";
+import Logo from "./components/Logo.jsx";
 import EdaTab from "./tabs/EdaTab.jsx";
 import ExportTab from "./tabs/ExportTab.jsx";
 import ImportTab from "./tabs/ImportTab.jsx";
@@ -120,6 +121,7 @@ function Workspace() {
       <header className="masthead">
         <div className="masthead-inner">
           <div className="brand">
+            <Logo />
             <h1>{t("ui.app.title")}</h1>
             <p>{t("ui.app.subtitle")}</p>
           </div>
