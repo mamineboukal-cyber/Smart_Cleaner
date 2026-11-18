@@ -27,7 +27,7 @@ MESSAGES: dict[str, str] = {
     "ui.error.network": "The server could not be reached. Start the backend on port 8000, then try again.",
     "ui.error.title": "Something went wrong",
     "ui.dismiss": "Dismiss",
-    "ui.missing_value": "n/a",
+    "ui.missing_value": "–",
     # --- UI: Import tab ---
     "ui.import.heading": "Import and configure",
     "ui.import.file": "Dataset file",
@@ -108,6 +108,42 @@ MESSAGES: dict[str, str] = {
     "ui.stat.outlier_pct": "Outlier %",
     "ui.stat.top_freq_pct": "Top value %",
     "ui.stat.mean_length": "Mean length",
+    "ui.split.stratified": "Stratified 80/20",
+    "ui.split.random": "Random 80/20",
+    "ui.chart.rows": "Rows",
+    "ui.chart.r": "Pearson r",
+    "ui.chart.empty": "No values to plot.",
+    # --- UI: EDA tab ---
+    "ui.eda.heading": "Exploratory analysis",
+    "ui.eda.intro": (
+        "Every figure here is computed on the train split (80%), the same rows the transformations "
+        "will be fitted on. Duplicates were removed before the split."
+    ),
+    "ui.eda.dataset": "Dataset",
+    "ui.eda.file": "File",
+    "ui.eda.task": "Task",
+    "ui.eda.split": "Split",
+    "ui.eda.train": "Train rows",
+    "ui.eda.test": "Test rows",
+    "ui.eda.duplicates": "Duplicate rows removed",
+    "ui.eda.target_missing": "Rows without a target removed",
+    "ui.eda.class_ratio": "Smallest / largest class",
+    "ui.eda.class_counts": "Class counts (train)",
+    "ui.eda.stats": "Column statistics",
+    "ui.eda.stats_help": "Select a column header to sort. Highlighted cells have missing values.",
+    "ui.eda.column": "Column",
+    "ui.eda.type": "Type",
+    "ui.eda.distributions": "Distributions",
+    "ui.eda.distributions_help": (
+        "Numeric columns: histogram with up to 30 bins. Other columns: the most frequent values, "
+        "with the rest grouped as Other."
+    ),
+    "ui.eda.correlation": "Correlation between numeric columns",
+    "ui.eda.correlation_help": (
+        "Pearson r on the train split, target excluded. Blue is negative, red is positive, grey is "
+        "no linear relation. Pairs above |r| = 0.95 are flagged on the Preprocessing step."
+    ),
+    "ui.eda.no_correlation": "There are fewer than two numeric columns, so there is no correlation matrix.",
     # --- Reasons (rule.recommendation) ---
     "reason.constant.drop_column": (
         "{n_unique} distinct value(s); the most frequent covers {top_freq_pct}% of rows "

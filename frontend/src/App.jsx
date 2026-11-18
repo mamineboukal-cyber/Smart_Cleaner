@@ -5,6 +5,7 @@ import { NetworkError, getLabels } from "./api.js";
 import { defaultChoices, setChoice } from "./choices.js";
 import { fmtInt } from "./format.js";
 import { LabelsContext, useLabels } from "./LabelsContext.jsx";
+import EdaTab from "./tabs/EdaTab.jsx";
 import ImportTab from "./tabs/ImportTab.jsx";
 
 // The single exception to "all text comes from i18n.py": when the backend is
@@ -107,6 +108,11 @@ function Workspace() {
         <TabPanel id="import" active={tab} visited={visited}>
           <ImportTab upload={state.upload} onUploaded={onUploaded} onAnalysed={onAnalysed} />
         </TabPanel>
+        {configured && (
+          <TabPanel id="eda" active={tab} visited={visited}>
+            <EdaTab eda={state.eda} findings={state.findings} upload={state.upload} />
+          </TabPanel>
+        )}
       </main>
     </div>
   );
