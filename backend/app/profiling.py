@@ -71,7 +71,7 @@ def column_stats(s: pd.Series, col_type: str) -> dict:
 
 
 def chart_data(s: pd.Series, col_type: str) -> dict:
-    """Histogram (numeric) or top-categories bar chart (anything else)."""
+    """Histogram (numeric; dates over time; times of day per hour) or top-categories bar chart."""
     if col_type == "numeric":
         values = pd.to_numeric(s, errors="coerce").dropna().astype(float).to_numpy()
         if values.size == 0:
@@ -84,6 +84,8 @@ def chart_data(s: pd.Series, col_type: str) -> dict:
         counts, _ = np.histogram(hours, bins=24, range=(0, 24))
         return {"kind": "histogram", "edges": list(range(25)), "counts": counts.tolist(),
                 "x_label": t("ui.chart.hour_of_day")}
+    if col_type == "datetime":
+        return _date_histogram(s)
     vc = s.dropna().astype(str).value_counts()
     n_non_null = int(vc.sum())
     if len(vc) > MAX_BARS and len(vc) / n_non_null >= ID_UNIQUE_RATIO:
@@ -95,6 +97,26 @@ def chart_data(s: pd.Series, col_type: str) -> dict:
     else:
         labels, counts = vc.index.tolist(), vc.tolist()
     return {"kind": "bar", "labels": labels, "counts": [int(c) for c in counts]}
+
+
+def _date_histogram(s: pd.Series) -> dict:
+    """Rows over time: <= 30 equal-width bins between the first and last date.
+    Edges are ISO strings; values that don't parse as dates are not counted."""
+    parsed = to_datetime(s)
+    if not pd.api.types.is_datetime64_any_dtype(parsed):   # mixed UTC offsets come back as objects
+        parsed = pd.to_datetime(parsed, errors="coerce", utc=True)
+    if getattr(parsed.dt, "tz", None) is not None:
+        parsed = parsed.dt.tz_convert(None)
+    ns = parsed.dropna().astype("datetime64[ns]").astype("int64").to_numpy()
+    if ns.size == 0:
+        return {"kind": "histogram", "x_type": "date", "edges": [], "counts": []}
+    lo, hi = int(ns.min()), int(ns.max())
+    if lo == hi:   # a single date: one bar, one day wide
+        hi = lo + pd.Timedelta(days=1).value
+    bins = min(MAX_BINS, max(1, int(np.unique(ns).size)))
+    counts, edges = np.histogram(ns, bins=bins, range=(lo, hi))
+    iso = [pd.Timestamp(int(e)).isoformat() for e in edges]
+    return {"kind": "histogram", "x_type": "date", "edges": iso, "counts": counts.tolist()}
 
 
 def correlation_matrix(df: pd.DataFrame, numeric_cols: list[str]) -> dict:

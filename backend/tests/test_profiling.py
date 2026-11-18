@@ -68,6 +68,30 @@ def test_time_only_column_charts_rows_per_hour():
     assert cd["x_label"] == "Hour of day"
 
 
+def test_date_column_charts_histogram_over_time():
+    """Dates are binned over time (<= 30 bins, ISO edges), not drawn as top-20 values."""
+    rng = np.random.default_rng(0)
+    days = pd.Timestamp("2023-01-01") + pd.to_timedelta(rng.integers(0, 365, 5000), unit="D")
+    s = pd.Series(days.strftime("%d/%m/%Y").tolist() + [None, "not a date"])   # text, as read from a CSV
+    cd = chart_data(s, "datetime")
+    assert cd["kind"] == "histogram" and cd["x_type"] == "date"
+    assert len(cd["counts"]) <= 30 and len(cd["edges"]) == len(cd["counts"]) + 1
+    assert sum(cd["counts"]) == 5000                       # unparseable values and NaN not counted
+    edges = pd.to_datetime(cd["edges"])
+    assert edges[0] == pd.Timestamp("2023-01-01") and edges[-1] >= days.max()
+    assert edges.is_monotonic_increasing
+    json.dumps(cd, allow_nan=False)
+
+
+def test_date_column_edge_cases():
+    one_day = chart_data(pd.Series(["2024-05-01"] * 10), "datetime")       # a single date
+    assert one_day["kind"] == "histogram" and one_day["counts"] == [10]
+    assert len(one_day["edges"]) == 2 and one_day["edges"][0] < one_day["edges"][1]
+    assert chart_data(pd.Series([None, "nope"]), "datetime")["counts"] == []   # nothing parses
+    real = chart_data(pd.Series(pd.date_range("2020-01-01", periods=100, freq="h")), "datetime")
+    assert real["x_type"] == "date" and sum(real["counts"]) == 100       # datetime64 dtype (Excel)
+
+
 def test_correlation_numeric_only(mixed_df):
     cm = correlation_matrix(mixed_df, ["num", "sym"])
     assert cm["columns"] == ["num", "sym"]

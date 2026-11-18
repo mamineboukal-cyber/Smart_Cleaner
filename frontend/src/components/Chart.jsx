@@ -41,6 +41,14 @@ const axis = (extra = {}) => ({
   title: { font: { size: 11, color: INK_2 }, standoff: 6, ...extra.title }, ...extra,
 });
 
+const DAY_MS = 86_400_000;
+/** Formats a bin edge (ms, UTC like the backend): the day alone when the range spans
+ * several days, otherwise the day and time. */
+const dateLabel = (first, last) => (ms) => {
+  const iso = new Date(ms).toISOString();
+  return last - first >= 2 * DAY_MS ? iso.slice(0, 10) : iso.slice(0, 16).replace("T", " ");
+};
+
 const truncate = (s) => (s.length > MAX_LABEL ? `${s.slice(0, MAX_LABEL - 1)}…` : s);
 
 /** Histogram (numeric, or rows per hour for times of day), horizontal bar chart
@@ -56,16 +64,23 @@ export default function Chart({ chart, height = 220 }) {
   if (!chart || !chart.counts?.length) return <p className="chart-empty">{t("ui.chart.empty")}</p>;
 
   if (chart.kind === "histogram") {
-    const { edges, counts } = chart;
-    const x = counts.map((_, i) => (edges[i] + edges[i + 1]) / 2);
+    const isDate = chart.x_type === "date";
+    const { counts } = chart;
+    // Date edges arrive as ISO strings: bin maths in milliseconds, a date axis draws them.
+    // The backend sends naive timestamps; read and write them as UTC so no timezone shift creeps in.
+    const edges = isDate ? chart.edges.map((e) => Date.parse(`${e}Z`)) : chart.edges;
+    const mid = counts.map((_, i) => (edges[i] + edges[i + 1]) / 2);
+    const x = isDate ? mid.map((m) => new Date(m).toISOString().slice(0, -1)) : mid;
     const width = counts.map((_, i) => edges[i + 1] - edges[i]);
-    const ranges = counts.map((_, i) => `[${fmt(edges[i])}, ${fmt(edges[i + 1])}${i === counts.length - 1 ? "]" : ")"}`);
+    const label = isDate ? dateLabel(edges[0], edges[edges.length - 1]) : fmt;
+    const ranges = counts.map((_, i) => `[${label(edges[i])}, ${label(edges[i + 1])}${i === counts.length - 1 ? "]" : ")"}`);
     const data = [{
       type: "bar", x, y: counts, width, customdata: ranges,
       marker: { color: SERIES, line: { color: SURFACE, width: 1 } }, // 1px surface gap between bins
       hovertemplate: `%{customdata}<br>${rows}: %{y:,}<extra></extra>`,
     }];
-    const xaxis = axis({ showgrid: false, ...(chart.x_label && { title: { text: chart.x_label } }) });
+    const xaxis = axis({ showgrid: false, ...(isDate && { type: "date" }),
+                         ...(chart.x_label && { title: { text: chart.x_label } }) });
     const layout = { ...baseLayout(height), xaxis, yaxis: axis({ title: { text: rows } }) };
     return <Plot data={data} layout={layout} config={CONFIG_SMALL} useResizeHandler className="plot" />;
   }
